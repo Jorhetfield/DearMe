@@ -24,9 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +39,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import es.jorhetfield.dearme.domain.model.Capsule
+import es.jorhetfield.dearme.ui.components.BaseScaffold
+import es.jorhetfield.dearme.ui.components.BaseTopAppBar
 import es.jorhetfield.dearme.ui.viewmodel.CapsuleViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -76,9 +76,9 @@ fun CapsuleDetailScreen(
         }
     }
 
-    Scaffold(
+    BaseScaffold(
         topBar = {
-            TopAppBar(
+            BaseTopAppBar(
                 title = { Text("Cápsula del Tiempo") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {

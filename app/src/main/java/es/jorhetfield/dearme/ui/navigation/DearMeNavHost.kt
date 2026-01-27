@@ -1,6 +1,8 @@
 package es.jorhetfield.dearme.ui.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -10,53 +12,89 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import es.jorhetfield.dearme.ui.screens.addcapsule.AddCapsuleScreen
 import es.jorhetfield.dearme.ui.screens.detail.CapsuleDetailScreen
-import es.jorhetfield.dearme.ui.screens.settings.SettingsScreen
+import es.jorhetfield.dearme.ui.screens.login.LoginScreen
+import es.jorhetfield.dearme.ui.screens.onboarding.OnboardingScreen
+import es.jorhetfield.dearme.ui.screens.profile.ProfileScreen
 import es.jorhetfield.dearme.ui.screens.vault.VaultScreen
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun DearMeNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     onExitApp: () -> Unit
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Vault.route,
-        modifier = modifier
-    ) {
-        composable(Screen.Vault.route) {
-            BackHandler { onExitApp() }
-            VaultScreen(
-                onNavigateToAddCapsule = { navController.navigate(Screen.AddCapsule.route) },
-                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                onNavigateToCapsuleDetail = { capsuleId ->
-                    navController.navigate(Screen.CapsuleDetail.createRoute(capsuleId))
-                }
-            )
-        }
+    SharedTransitionLayout {
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Onboarding.route,
+            modifier = modifier
+        ) {
+            composable(Screen.Onboarding.route) {
+                OnboardingScreen(
+                    onGetStarted = { navController.navigate(Screen.Login.route) }
+                )
+            }
 
-        composable(Screen.AddCapsule.route) {
-            AddCapsuleScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onCapsuleSaved = { navController.popBackStack() }
-            )
-        }
+            composable(Screen.Login.route) {
+                LoginScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onLoginSuccess = {
+                        navController.navigate(Screen.Vault.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    },
+                    onGoogleLogin = { /* TODO: Implement Google Sign In */ }
+                )
+            }
 
-        composable(Screen.Settings.route) {
-            SettingsScreen(onNavigateBack = { navController.popBackStack() })
-        }
+            composable(Screen.Vault.route) {
+                BackHandler { onExitApp() }
+                VaultScreen(
+                    onNavigateToAddCapsule = { navController.navigate(Screen.AddCapsule.route) },
+                    onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                    onNavigateToCapsuleDetail = { capsuleId ->
+                        navController.navigate(Screen.CapsuleDetail.createRoute(capsuleId))
+                    },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
+                )
+            }
 
-        composable(
-            route = Screen.CapsuleDetail.route,
-            arguments = listOf(
-                navArgument("capsuleId") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val capsuleId = backStackEntry.arguments?.getString("capsuleId") ?: return@composable
-            CapsuleDetailScreen(
-                capsuleId = capsuleId,
-                onNavigateBack = { navController.popBackStack() }
-            )
+            composable(Screen.AddCapsule.route) {
+                AddCapsuleScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onCapsuleSaved = { navController.popBackStack() },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
+                )
+            }
+
+            composable(Screen.Profile.route) {
+                ProfileScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onLogout = {
+                        navController.navigate(Screen.Onboarding.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
+                )
+            }
+
+            composable(
+                route = Screen.CapsuleDetail.route,
+                arguments = listOf(
+                    navArgument("capsuleId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val capsuleId = backStackEntry.arguments?.getString("capsuleId") ?: return@composable
+                CapsuleDetailScreen(
+                    capsuleId = capsuleId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

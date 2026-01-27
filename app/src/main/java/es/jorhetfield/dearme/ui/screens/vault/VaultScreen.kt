@@ -1,5 +1,13 @@
 package es.jorhetfield.dearme.ui.screens.vault
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,11 +34,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -41,74 +46,108 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.domain.model.Capsule
+import es.jorhetfield.dearme.ui.components.BaseScaffold
+import es.jorhetfield.dearme.ui.components.BaseTopAppBar
 import es.jorhetfield.dearme.ui.viewmodel.CapsuleViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun VaultScreen(
     onNavigateToAddCapsule: () -> Unit,
-    onNavigateToSettings: () -> Unit,
+    onNavigateToProfile: () -> Unit,
     onNavigateToCapsuleDetail: (String) -> Unit,
-    viewModel: CapsuleViewModel = hiltViewModel()
+    viewModel: CapsuleViewModel = hiltViewModel(),
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val capsules by viewModel.capsules.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Mi Bóveda", style = MaterialTheme.typography.headlineMedium) },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateToSettings,
-                        modifier = Modifier.padding(start = 8.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(40.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer
+    with(sharedTransitionScope) {
+        BaseScaffold(
+            topBar = {
+                BaseTopAppBar(
+                    title = {
+                        Text(
+                            "Dear Me",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = onNavigateToProfile,
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState(key = "avatar_to_profile_transition"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+                                    boundsTransform = { _, _ ->
+                                        tween(durationMillis = 500)
+                                    }
+                                )
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Ajustes",
-                                modifier = Modifier.padding(8.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Surface(
+                                modifier = Modifier.size(40.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Perfil",
+                                    modifier = Modifier.padding(8.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToAddCapsule,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir cápsula")
-            }
-        }
-    ) { paddingValues ->
-        if (capsules.isEmpty()) {
-            EmptyVaultContent(Modifier.fillMaxSize().padding(paddingValues))
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize().padding(paddingValues)
-            ) {
-                items(capsules, key = { it.id }) { capsule ->
-                    CapsuleCard(
-                        capsule = capsule,
-                        onClick = { onNavigateToCapsuleDetail(capsule.id) }
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = onNavigateToAddCapsule,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.sharedBounds(
+                        sharedContentState = rememberSharedContentState(key = "fab_to_create_transition"),
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+                        enter = fadeIn(animationSpec = tween(500)) + scaleIn(
+                            initialScale = 0.8f,
+                            animationSpec = tween(500)
+                        ),
+                        exit = fadeOut(animationSpec = tween(500)) + scaleOut(
+                            targetScale = 0.8f,
+                            animationSpec = tween(500)
+                        ),
+                        boundsTransform = { _, _ ->
+                            tween(durationMillis = 500)
+                        }
                     )
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir cápsula")
+                }
+            }
+        ) { paddingValues ->
+            if (capsules.isEmpty()) {
+                EmptyVaultContent(Modifier.fillMaxSize().padding(paddingValues))
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize().padding(paddingValues)
+                ) {
+                    items(capsules, key = { it.id }) { capsule ->
+                        CapsuleCard(
+                            capsule = capsule,
+                            onClick = { onNavigateToCapsuleDetail(capsule.id) }
+                        )
+                    }
                 }
             }
         }
@@ -178,6 +217,20 @@ private fun CapsuleCard(capsule: Capsule, onClick: () -> Unit, modifier: Modifie
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
+                } else {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        Text(
+                            text = "¡Ábreme!",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
+                    }
                 }
             }
 
