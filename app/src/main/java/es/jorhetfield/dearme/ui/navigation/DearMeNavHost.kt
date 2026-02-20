@@ -15,6 +15,7 @@ import es.jorhetfield.dearme.ui.screens.detail.CapsuleDetailScreen
 import es.jorhetfield.dearme.ui.screens.login.LoginScreen
 import es.jorhetfield.dearme.ui.screens.onboarding.OnboardingScreen
 import es.jorhetfield.dearme.ui.screens.profile.ProfileScreen
+import es.jorhetfield.dearme.ui.screens.signup.SignUpScreen
 import es.jorhetfield.dearme.ui.screens.vault.VaultScreen
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -44,7 +45,21 @@ fun DearMeNavHost(
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
                     },
-                    onGoogleLogin = { /* TODO: Implement Google Sign In */ }
+                    onGoogleLogin = { /* TODO: Implement Google Sign In */ },
+                    onNavigateToSignUp = { navController.navigate(Screen.SignUp.route) }
+                )
+            }
+
+            composable(Screen.SignUp.route) {
+                SignUpScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onSignUpSuccess = {
+                        navController.navigate(Screen.Vault.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    },
+                    onGoogleSignUp = { /* TODO: Implement Google Sign Up */ },
+                    onNavigateToLogin = { navController.popBackStack() }
                 )
             }
 

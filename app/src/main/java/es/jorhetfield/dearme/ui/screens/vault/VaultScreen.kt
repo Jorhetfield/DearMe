@@ -50,7 +50,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.graphics.Color
 import es.jorhetfield.dearme.ui.components.BaseScaffold
-import es.jorhetfield.dearme.ui.viewmodel.CapsuleViewModel
+import es.jorhetfield.dearme.ui.components.ErrorDialog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,11 +61,11 @@ fun VaultScreen(
     onNavigateToAddCapsule: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToCapsuleDetail: (String) -> Unit,
-    viewModel: CapsuleViewModel = hiltViewModel(),
+    viewModel: VaultViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
-    val capsules by viewModel.capsules.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     with(sharedTransitionScope) {
         BaseScaffold(
@@ -138,7 +138,7 @@ fun VaultScreen(
                 }
             }
         ) { paddingValues ->
-            if (capsules.isEmpty()) {
+            if (uiState.capsules.isEmpty()) {
                 EmptyVaultContent(Modifier.fillMaxSize().padding(paddingValues))
             } else {
                 LazyVerticalGrid(
@@ -148,7 +148,7 @@ fun VaultScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize().padding(paddingValues)
                 ) {
-                    items(capsules, key = { it.id }) { capsule ->
+                    items(uiState.capsules, key = { it.id }) { capsule ->
                         CapsuleCard(
                             capsule = capsule,
                             onClick = { onNavigateToCapsuleDetail(capsule.id) }
@@ -157,6 +157,16 @@ fun VaultScreen(
                 }
             }
         }
+    }
+
+    // Error dialog
+    if (uiState.error != null) {
+        ErrorDialog(
+            message = uiState.error!!,
+            onDismiss = {
+                // Error handling can be added to CapsuleViewModel if needed
+            }
+        )
     }
 }
 

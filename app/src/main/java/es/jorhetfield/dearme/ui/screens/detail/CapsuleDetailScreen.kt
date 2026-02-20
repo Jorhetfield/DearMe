@@ -14,46 +14,26 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
-import es.jorhetfield.dearme.domain.model.Capsule
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
-import es.jorhetfield.dearme.ui.viewmodel.CapsuleViewModel
+import es.jorhetfield.dearme.ui.components.ErrorDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CapsuleDetailScreen(
     capsuleId: String,
     onNavigateBack: () -> Unit,
-    viewModel: CapsuleViewModel = hiltViewModel()
+    viewModel: CapsuleDetailViewModel = hiltViewModel()
 ) {
-    var capsule by remember { mutableStateOf<Capsule?>(null) }
-    var isRevealed by remember { mutableStateOf(false) }
-    var showUnlockAnimation by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(capsuleId) {
-        capsule = viewModel.getCapsuleById(capsuleId)
-
-        // Si está desbloqueada y no se ha abierto, mostrar animación de revelado
-        capsule?.let {
-            if (!it.isLocked && !it.isOpened) {
-                showUnlockAnimation = true
-                delay(1500) // Duración de la animación
-                isRevealed = true
-                // Marcar como abierta
-                viewModel.updateCapsule(it.copy(isOpened = true))
-            } else {
-                isRevealed = true
-            }
-        }
+        viewModel.loadCapsule(capsuleId)
     }
 
     BaseScaffold(
@@ -80,13 +60,13 @@ fun CapsuleDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            capsule?.let { cap ->
+            uiState.capsule?.let { cap ->
                 if (cap.isLocked) {
                     // Estado bloqueado
                     LockedContent(capsule = cap)
                 } else {
                     // Estado desbloqueado
-                    if (showUnlockAnimation && !isRevealed) {
+                    if (uiState.showUnlockAnimation && !uiState.isRevealed) {
                         UnlockAnimation()
                     } else {
                         RevealedContent(capsule = cap)
@@ -94,5 +74,15 @@ fun CapsuleDetailScreen(
                 }
             } ?: LoadingContent()
         }
+    }
+
+    // Error dialog
+    if (uiState.error != null) {
+        ErrorDialog(
+            message = uiState.error!!,
+            onDismiss = {
+                viewModel.clearError()
+            }
+        )
     }
 }

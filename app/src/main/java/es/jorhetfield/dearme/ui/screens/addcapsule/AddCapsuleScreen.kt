@@ -25,12 +25,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Info
@@ -59,10 +57,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -70,15 +66,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import es.jorhetfield.dearme.domain.model.Capsule
-import es.jorhetfield.dearme.domain.model.MediaType
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ErrorDialog
 import es.jorhetfield.dearme.ui.components.LoadingOverlay
-import es.jorhetfield.dearme.ui.viewmodel.CapsuleViewModel
-import es.jorhetfield.dearme.ui.viewmodel.UiState
-import java.util.Calendar
-import java.util.UUID
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -86,37 +76,24 @@ import kotlin.random.Random
 fun AddCapsuleScreen(
     onNavigateBack: () -> Unit,
     onCapsuleSaved: () -> Unit,
-    viewModel: CapsuleViewModel = hiltViewModel(),
+    viewModel: AddCapsuleViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
-    var message by remember { mutableStateOf("") }
-    var showBackDialog by remember { mutableStateOf(false) }
-    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
-    var selectedHour by remember { mutableStateOf<Int?>(null) }
-    var selectedMinute by remember { mutableStateOf<Int?>(null) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
-    var isSealing by remember { mutableStateOf(false) }
-    var attachedFiles by remember { mutableStateOf<List<AttachedFile>>(emptyList()) }
-    var showErrorDialog by remember { mutableStateOf<String?>(null) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val operationState by viewModel.operationState.collectAsStateWithLifecycle()
-
-    val hasChanges = message.isNotBlank()
-    val unlockDate = remember(selectedDateMillis, selectedHour, selectedMinute) {
-        if (selectedDateMillis != null && selectedHour != null && selectedMinute != null) {
-            Calendar.getInstance().apply {
-                timeInMillis = selectedDateMillis!!
-                set(Calendar.HOUR_OF_DAY, selectedHour!!)
-                set(Calendar.MINUTE, selectedMinute!!)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-        } else null
+    LaunchedEffect(uiState.isSaved) {
+        if (uiState.isSaved) {
+            onCapsuleSaved()
+        }
     }
+
     BackHandler {
-        if (hasChanges) showBackDialog = true else onNavigateBack()
+        if (uiState.hasChanges) {
+            viewModel.onShowBackDialog(true)
+        } else {
+            onNavigateBack()
+        }
     }
 
     with(sharedTransitionScope) {
@@ -147,7 +124,11 @@ fun AddCapsuleScreen(
                     },
                     navigationIcon = {
                         IconButton(onClick = {
-                            if (hasChanges) showBackDialog = true else onNavigateBack()
+                            if (uiState.hasChanges) {
+                                viewModel.onShowBackDialog(true)
+                            } else {
+                                onNavigateBack()
+                            }
                         }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -184,8 +165,8 @@ fun AddCapsuleScreen(
                 ) {
                     // Campo de texto (Editor limpio)
                     TextField(
-                        value = message,
-                        onValueChange = { message = it },
+                        value = uiState.message,
+                        onValueChange = { viewModel.onMessageChanged(it) },
                         modifier = Modifier
                             .fillMaxSize()
                             .skipToLookaheadSize(),
@@ -213,49 +194,49 @@ fun AddCapsuleScreen(
                 }
 
                 // Carrusel de adjuntos (si hay archivos)
-                if (attachedFiles.isNotEmpty()) {
+                if (uiState.attachedFiles.isNotEmpty()) {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.skipToLookaheadSize()
                     ) {
-                    items(attachedFiles) { file ->
-                        InputChip(
-                            selected = false,
-                            onClick = { },
-                            label = { Text(file.name) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = when(file.type) {
-                                        FileType.AUDIO -> Icons.Filled.Phone
-                                        FileType.PHOTO -> Icons.Filled.Person
-                                    },
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = {
-                                        attachedFiles = attachedFiles.filter { it != file }
-                                    },
-                                    modifier = Modifier.size(18.dp)
-                                ) {
+                        items(uiState.attachedFiles) { file ->
+                            InputChip(
+                                selected = false,
+                                onClick = { },
+                                label = { Text(file.name) },
+                                leadingIcon = {
                                     Icon(
-                                        imageVector = Icons.Filled.Close,
-                                        contentDescription = "Eliminar",
-                                        modifier = Modifier.size(16.dp)
+                                        imageVector = when(file.type) {
+                                            FileType.AUDIO -> Icons.Filled.Phone
+                                            FileType.PHOTO -> Icons.Filled.Person
+                                        },
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                }
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            colors = InputChipDefaults.inputChipColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                trailingIcon = {
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.onAttachedFileRemoved(file)
+                                        },
+                                        modifier = Modifier.size(18.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Eliminar",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = InputChipDefaults.inputChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
                             )
-                        )
+                        }
                     }
                 }
-            }
 
                 // Panel de herramientas (Bottom Sheet Falso)
                 Surface(
@@ -266,129 +247,117 @@ fun AddCapsuleScreen(
                     color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.95f),
                     tonalElevation = 3.dp
                 ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp)
-                        .padding(bottom = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Selector de fecha
-                    DateSelector(
-                        selectedDateMillis = selectedDateMillis,
-                        selectedHour = selectedHour,
-                        selectedMinute = selectedMinute,
-                        onDateClick = { showDatePicker = true },
-                        onSurpriseClick = {
-                            // Fecha aleatoria
-                            val now = System.currentTimeMillis()
-                            val maxDays = 30L * 24 * 60 * 60 * 1000
-                            val randomMillis = now + Random.nextLong(1, maxDays)
-                            val cal = Calendar.getInstance().apply {
-                                timeInMillis = randomMillis
-                            }
-                            selectedDateMillis = cal.apply {
-                                set(Calendar.HOUR_OF_DAY, 0)
-                                set(Calendar.MINUTE, 0)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }.timeInMillis
-                            selectedHour = cal.get(Calendar.HOUR_OF_DAY)
-                            selectedMinute = cal.get(Calendar.MINUTE)
-                        }
-                    )
-
-                    // Barra de acciones
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier
+                            .padding(24.dp)
+                            .padding(bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Multimedia (Izquierda)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            IconButton(onClick = { /* TODO: Camera */ }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Add,
-                                    contentDescription = "Cámara"
-                                )
-                            }
-                            IconButton(onClick = { /* TODO: Microphone */ }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Phone,
-                                    contentDescription = "Micrófono"
-                                )
-                            }
-                            IconButton(onClick = { /* TODO: Mood */ }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.FavoriteBorder,
-                                    contentDescription = "Emoción"
-                                )
-                            }
-                        }
-
-                        // Botón Sellar (Derecha)
-                        ExtendedFloatingActionButton(
-                            onClick = {
-                                if (message.isNotBlank() && unlockDate != null) {
-                                    isSealing = true
-                                    val capsule = Capsule(
-                                        id = UUID.randomUUID().toString(),
-                                        userId = "temp_user",
-                                        message = message,
-                                        mediaPath = null,
-                                        mediaType = MediaType.TEXT_ONLY,
-                                        creationDate = System.currentTimeMillis(),
-                                        unlockDate = unlockDate,
-                                        isLocked = true,
-                                        isOpened = false
-                                    )
-                                    viewModel.createCapsule(capsule)
-                                    onCapsuleSaved()
+                        // Selector de fecha
+                        DateSelector(
+                            selectedDateMillis = uiState.selectedDateMillis,
+                            selectedHour = uiState.selectedHour,
+                            selectedMinute = uiState.selectedMinute,
+                            onDateClick = { viewModel.onShowDatePicker(true) },
+                            onSurpriseClick = {
+                                // Fecha aleatoria
+                                val now = System.currentTimeMillis()
+                                val maxDays = 30L * 24 * 60 * 60 * 1000
+                                val randomMillis = now + Random.nextLong(1, maxDays)
+                                val cal = java.util.Calendar.getInstance().apply {
+                                    timeInMillis = randomMillis
                                 }
-                            },
-                            icon = {
-                                if (isSealing) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.Send,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            text = { Text("Sellar") },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                viewModel.onDateMillisSelected(cal.apply {
+                                    set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                    set(java.util.Calendar.MINUTE, 0)
+                                    set(java.util.Calendar.SECOND, 0)
+                                    set(java.util.Calendar.MILLISECOND, 0)
+                                }.timeInMillis)
+                                viewModel.onTimeSelected(
+                                    cal.get(java.util.Calendar.HOUR_OF_DAY),
+                                    cal.get(java.util.Calendar.MINUTE)
+                                )
+                            }
                         )
+
+                        // Barra de acciones
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Multimedia (Izquierda)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                IconButton(onClick = { /* TODO: Camera */ }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Add,
+                                        contentDescription = "Cámara"
+                                    )
+                                }
+                                IconButton(onClick = { /* TODO: Microphone */ }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Phone,
+                                        contentDescription = "Micrófono"
+                                    )
+                                }
+                                IconButton(onClick = { /* TODO: Mood */ }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.FavoriteBorder,
+                                        contentDescription = "Emoción"
+                                    )
+                                }
+                            }
+
+                            // Botón Sellar (Derecha)
+                            ExtendedFloatingActionButton(
+                                onClick = {
+                                    viewModel.onSealCapsule()
+                                },
+                                icon = {
+                                    if (uiState.isSealing) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.Send,
+                                            contentDescription = null
+                                        )
+                                    }
+                                },
+                                text = { Text("Sellar") },
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
                     }
                 }
             }
         }
     }
-    }
 
-    if (showDatePicker) {
+    // Date Picker Dialog
+    if (uiState.showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDateMillis ?: System.currentTimeMillis()
+            initialSelectedDateMillis = uiState.selectedDateMillis ?: System.currentTimeMillis()
         )
         DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { viewModel.onShowDatePicker(false) },
             confirmButton = {
                 TextButton(onClick = {
-                    selectedDateMillis = datePickerState.selectedDateMillis
-                    showDatePicker = false
-                    if (selectedHour == null) {
-                        showTimePicker = true
+                    datePickerState.selectedDateMillis?.let { viewModel.onDateMillisSelected(it) }
+                    viewModel.onShowDatePicker(false)
+                    if (uiState.selectedHour == null) {
+                        viewModel.onShowTimePicker(true)
                     }
                 }) {
                     Text("Aceptar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
+                TextButton(onClick = { viewModel.onShowDatePicker(false) }) {
                     Text("Cancelar")
                 }
             },
@@ -412,24 +381,25 @@ fun AddCapsuleScreen(
             DatePicker(state = datePickerState)
         }
     }
-    if (showTimePicker) {
+
+    // Time Picker Dialog
+    if (uiState.showTimePicker) {
         val timePickerState = rememberTimePickerState(
-            initialHour = selectedHour ?: 12,
-            initialMinute = selectedMinute ?: 0
+            initialHour = uiState.selectedHour ?: 12,
+            initialMinute = uiState.selectedMinute ?: 0
         )
         AlertDialog(
-            onDismissRequest = { showTimePicker = false },
+            onDismissRequest = { viewModel.onShowTimePicker(false) },
             confirmButton = {
                 TextButton(onClick = {
-                    selectedHour = timePickerState.hour
-                    selectedMinute = timePickerState.minute
-                    showTimePicker = false
+                    viewModel.onTimeSelected(timePickerState.hour, timePickerState.minute)
+                    viewModel.onShowTimePicker(false)
                 }) {
                     Text("Aceptar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
+                TextButton(onClick = { viewModel.onShowTimePicker(false) }) {
                     Text("Cancelar")
                 }
             },
@@ -459,19 +429,21 @@ fun AddCapsuleScreen(
             }
         )
     }
-    if (showBackDialog) {
+
+    // Back Confirmation Dialog
+    if (uiState.showBackDialog) {
         AlertDialog(
-            onDismissRequest = { showBackDialog = false },
+            onDismissRequest = { viewModel.onShowBackDialog(false) },
             title = { Text("¿Descartar cambios?") },
             text = { Text("Tienes cambios sin guardar. ¿Seguro que quieres salir?") },
             confirmButton = {
                 TextButton(onClick = {
-                    showBackDialog = false
+                    viewModel.onShowBackDialog(false)
                     onNavigateBack()
                 }) { Text("Descartar") }
             },
             dismissButton = {
-                TextButton(onClick = { showBackDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { viewModel.onShowBackDialog(false) }) { Text("Cancelar") }
             },
             containerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
@@ -479,29 +451,16 @@ fun AddCapsuleScreen(
         )
     }
 
-    when (operationState) {
-        is UiState.Loading -> {
-            LoadingOverlay()
-        }
-        is UiState.Error -> {
-            val errorMessage = (operationState as UiState.Error<Unit>).message
-            if (showErrorDialog == null) {
-                showErrorDialog = errorMessage
-            }
-        }
-        is UiState.Success -> {
-            isSealing = false
-        }
-        is UiState.Idle -> {
-            isSealing = false
-        }
+    // Loading overlay
+    if (uiState.isLoading || uiState.isSealing) {
+        LoadingOverlay()
     }
 
-    if (showErrorDialog != null) {
+    // Error dialog
+    if (uiState.error != null) {
         ErrorDialog(
-            message = showErrorDialog!!,
+            message = uiState.error!!,
             onDismiss = {
-                showErrorDialog = null
                 viewModel.clearError()
             }
         )

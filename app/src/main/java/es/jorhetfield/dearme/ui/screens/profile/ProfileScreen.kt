@@ -35,19 +35,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
+import es.jorhetfield.dearme.ui.components.ErrorDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -55,8 +55,11 @@ fun ProfileScreen(
     onNavigateBack: () -> Unit,
     onLogout: () -> Unit,
     sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     with(sharedTransitionScope) {
         BaseScaffold(
             modifier = Modifier.sharedBounds(
@@ -113,13 +116,13 @@ fun ProfileScreen(
 
                 // Nombre y email
                 Text(
-                    text = "Usuario",
+                    text = uiState.userName,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "usuario@ejemplo.com",
+                    text = uiState.userEmail,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -133,12 +136,12 @@ fun ProfileScreen(
                 ) {
                     StatCard(
                         title = "Cápsulas Enviadas",
-                        value = "12",
+                        value = uiState.capsulasSent,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "Cápsulas Abiertas",
-                        value = "5",
+                        value = uiState.capsulesOpened,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -156,7 +159,9 @@ fun ProfileScreen(
                         SettingItem(
                             icon = Icons.Default.Notifications,
                             title = "Notificaciones",
-                            hasSwitch = true
+                            hasSwitch = true,
+                            switchState = uiState.notificationsEnabled,
+                            onSwitchChange = { viewModel.onNotificationsToggled(it) }
                         )
                         HorizontalDivider()
                         SettingItem(
@@ -189,6 +194,16 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+
+    // Error dialog
+    if (uiState.error != null) {
+        ErrorDialog(
+            message = uiState.error!!,
+            onDismiss = {
+                viewModel.clearError()
+            }
+        )
     }
 }
 
@@ -232,10 +247,10 @@ private fun SettingItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     hasSwitch: Boolean = false,
+    switchState: Boolean = false,
+    onSwitchChange: ((Boolean) -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
-    var switchState by remember { mutableStateOf(true) }
-
     Surface(
         onClick = { onClick?.invoke() },
         modifier = Modifier.fillMaxWidth()
@@ -265,7 +280,7 @@ private fun SettingItem(
             if (hasSwitch) {
                 Switch(
                     checked = switchState,
-                    onCheckedChange = { switchState = it }
+                    onCheckedChange = { onSwitchChange?.invoke(it) }
                 )
             } else {
                 Icon(

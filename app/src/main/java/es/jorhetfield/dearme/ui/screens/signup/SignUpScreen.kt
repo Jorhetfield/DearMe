@@ -1,4 +1,4 @@
-package es.jorhetfield.dearme.ui.screens.login
+package es.jorhetfield.dearme.ui.screens.signup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,18 +41,18 @@ import es.jorhetfield.dearme.ui.components.LoadingOverlay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
+fun SignUpScreen(
     onNavigateBack: () -> Unit,
-    onLoginSuccess: () -> Unit,
-    onGoogleLogin: () -> Unit,
-    onNavigateToSignUp: () -> Unit = {},
-    viewModel: LoginViewModel = hiltViewModel()
+    onSignUpSuccess: () -> Unit,
+    onGoogleSignUp: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    viewModel: SignUpViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.isLoginSuccess) {
-        if (uiState.isLoginSuccess) {
-            onLoginSuccess()
+    LaunchedEffect(uiState.isSignUpSuccess) {
+        if (uiState.isSignUpSuccess) {
+            onSignUpSuccess()
         }
     }
 
@@ -87,22 +87,34 @@ fun LoginScreen(
             // Encabezado
             Column {
                 Text(
-                    text = "Bienvenido de nuevo",
+                    text = "Crear cuenta",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Inicia sesión para acceder a tus cápsulas",
+                    text = "Únete a DearMe y comienza a crear tus cápsulas del tiempo",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Formulario
+            OutlinedTextField(
+                value = uiState.fullName,
+                onValueChange = { viewModel.onFullNameChanged(it) },
+                label = { Text("Nombre completo") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            )
+
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.onEmailChanged(it) },
@@ -126,14 +138,47 @@ fun LoginScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                ),
+                isError = uiState.password.isNotBlank() && !uiState.isPasswordValid
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            if (uiState.password.isNotBlank() && !uiState.isPasswordValid) {
+                Text(
+                    text = "La contraseña debe tener al menos 6 caracteres",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
+            OutlinedTextField(
+                value = uiState.confirmPassword,
+                onValueChange = { viewModel.onConfirmPasswordChanged(it) },
+                label = { Text("Confirmar contraseña") },
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation(),
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                isError = uiState.confirmPassword.isNotBlank() && !uiState.isPasswordsMatch
+            )
+
+            if (uiState.confirmPassword.isNotBlank() && !uiState.isPasswordsMatch) {
+                Text(
+                    text = "Las contraseñas no coinciden",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Botón principal
             Button(
-                onClick = { viewModel.onLoginClick() },
+                onClick = { viewModel.onSignUpClick() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -141,13 +186,13 @@ fun LoginScreen(
                 enabled = uiState.isFormValid && !uiState.isLoading
             ) {
                 Text(
-                    text = "Iniciar Sesión",
+                    text = "Crear Cuenta",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Separador
             Row(
@@ -164,11 +209,11 @@ fun LoginScreen(
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Social Login
+            // Social SignUp
             OutlinedButton(
-                onClick = { viewModel.onGoogleLoginClick() },
+                onClick = { viewModel.onGoogleSignUpClick() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -185,7 +230,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Link al signup
+            // Link al login
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,18 +239,18 @@ fun LoginScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "¿No tienes cuenta?",
+                    text = "¿Ya tienes cuenta?",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 TextButton(
-                    onClick = onNavigateToSignUp,
+                    onClick = onNavigateToLogin,
                     modifier = Modifier.height(32.dp),
                     enabled = !uiState.isLoading
                 ) {
                     Text(
-                        text = "Regístrate",
+                        text = "Inicia sesión",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
