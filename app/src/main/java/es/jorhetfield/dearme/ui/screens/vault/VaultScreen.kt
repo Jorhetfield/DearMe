@@ -4,10 +4,6 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,19 +32,19 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.domain.model.Capsule
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.ui.graphics.Color
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ErrorDialog
 import java.text.SimpleDateFormat
@@ -81,16 +77,7 @@ fun VaultScreen(
                     actions = {
                         IconButton(
                             onClick = onNavigateToProfile,
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .sharedBounds(
-                                    sharedContentState = rememberSharedContentState(key = "avatar_to_profile_transition"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                    resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
-                                    boundsTransform = { _, _ ->
-                                        tween(durationMillis = 500)
-                                    }
-                                )
+                            modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Surface(
                                 modifier = Modifier.size(40.dp),
@@ -116,23 +103,7 @@ fun VaultScreen(
                 FloatingActionButton(
                     onClick = onNavigateToAddCapsule,
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.sharedBounds(
-                        sharedContentState = rememberSharedContentState(key = "fab_to_create_transition"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
-                        enter = fadeIn(animationSpec = tween(500)) + scaleIn(
-                            initialScale = 0.8f,
-                            animationSpec = tween(500)
-                        ),
-                        exit = fadeOut(animationSpec = tween(500)) + scaleOut(
-                            targetScale = 0.8f,
-                            animationSpec = tween(500)
-                        ),
-                        boundsTransform = { _, _ ->
-                            tween(durationMillis = 500)
-                        }
-                    )
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir cápsula")
                 }
@@ -151,7 +122,9 @@ fun VaultScreen(
                     items(uiState.capsules, key = { it.id }) { capsule ->
                         CapsuleCard(
                             capsule = capsule,
-                            onClick = { onNavigateToCapsuleDetail(capsule.id) }
+                            onClick = { onNavigateToCapsuleDetail(capsule.id) },
+                            sharedTransitionScope = this@with,
+                            animatedVisibilityScope = animatedVisibilityScope
                         )
                     }
                 }
@@ -198,25 +171,41 @@ private fun EmptyVaultContent(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun CapsuleCard(capsule: Capsule, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun CapsuleCard(
+    capsule: Capsule,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope
+) {
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
     val unlockDateFormatted = remember(capsule.unlockDate) {
         dateFormat.format(Date(capsule.unlockDate))
     }
 
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth().aspectRatio(0.85f),
-        colors = CardDefaults.cardColors(
-            containerColor = if (capsule.isLocked) {
-                MaterialTheme.colorScheme.surfaceVariant
-            } else {
-                MaterialTheme.colorScheme.primaryContainer
-            }
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+    with(sharedTransitionScope) {
+        Card(
+            onClick = onClick,
+            modifier = modifier
+                .fillMaxWidth()
+                .aspectRatio(0.85f)
+                .sharedBounds(
+                    sharedContentState = rememberSharedContentState(key = "capsule_card_${capsule.id}"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+                    boundsTransform = { _, _ -> tween(durationMillis = 400) }
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = if (capsule.isLocked) {
+                    MaterialTheme.colorScheme.surfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.primaryContainer
+                }
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
@@ -268,5 +257,6 @@ private fun CapsuleCard(capsule: Capsule, onClick: () -> Unit, modifier: Modifie
                 )
             }
         }
+    }
     }
 }

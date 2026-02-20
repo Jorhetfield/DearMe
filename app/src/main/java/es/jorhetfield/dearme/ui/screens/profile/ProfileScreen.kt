@@ -1,9 +1,5 @@
 package es.jorhetfield.dearme.ui.screens.profile
 
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,11 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -51,35 +47,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ErrorDialog
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
     onLogout: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    with(sharedTransitionScope) {
-        BaseScaffold(
-            modifier = Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = "avatar_to_profile_transition"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
-                boundsTransform = { _, _ ->
-                    tween(durationMillis = 500)
-                }
-            ),
-            topBar = {
+    BaseScaffold(
+        topBar = {
                 TopAppBar(
                     title = { },
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Atrás"
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cerrar"
                             )
                         }
                     },
@@ -96,7 +81,7 @@ fun ProfileScreen(
                     .padding(paddingValues)
                     .padding(24.dp)
                     .verticalScroll(rememberScrollState())
-                    .skipToLookaheadSize(),
+                    ,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Avatar grande centrado
@@ -198,7 +183,6 @@ fun ProfileScreen(
                 }
             }
         }
-    }
 
     // Error dialog
     if (uiState.error != null) {

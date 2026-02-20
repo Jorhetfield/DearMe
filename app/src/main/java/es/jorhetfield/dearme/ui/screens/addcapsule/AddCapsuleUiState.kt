@@ -25,12 +25,3 @@ data class AddCapsuleUiState(
         }.timeInMillis
     } else null
 }
-
-data class AttachedFile(
-    val name: String,
-    val type: FileType
-)
-
-enum class FileType {
-    AUDIO, PHOTO
-}

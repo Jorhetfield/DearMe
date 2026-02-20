@@ -1,32 +1,20 @@
 package es.jorhetfield.dearme.ui.screens.addcapsule
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.outlined.Add
@@ -71,14 +59,12 @@ import es.jorhetfield.dearme.ui.components.ErrorDialog
 import es.jorhetfield.dearme.ui.components.LoadingOverlay
 import kotlin.random.Random
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddCapsuleScreen(
     onNavigateBack: () -> Unit,
     onCapsuleSaved: () -> Unit,
-    viewModel: AddCapsuleViewModel = hiltViewModel(),
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    viewModel: AddCapsuleViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -96,25 +82,8 @@ fun AddCapsuleScreen(
         }
     }
 
-    with(sharedTransitionScope) {
-        BaseScaffold(
-            modifier = Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = "fab_to_create_transition"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
-                enter = fadeIn(animationSpec = tween(500)) + scaleIn(
-                    initialScale = 0.8f,
-                    animationSpec = tween(500)
-                ),
-                exit = fadeOut(animationSpec = tween(500)) + scaleOut(
-                    targetScale = 0.8f,
-                    animationSpec = tween(500)
-                ),
-                boundsTransform = { _, _ ->
-                    tween(durationMillis = 500)
-                }
-            ),
-            topBar = {
+    BaseScaffold(
+        topBar = {
                 CenterAlignedTopAppBar(
                     title = {
                         Text(
@@ -131,8 +100,8 @@ fun AddCapsuleScreen(
                             }
                         }) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Volver"
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cerrar"
                             )
                         }
                     },
@@ -168,8 +137,7 @@ fun AddCapsuleScreen(
                         value = uiState.message,
                         onValueChange = { viewModel.onMessageChanged(it) },
                         modifier = Modifier
-                            .fillMaxSize()
-                            .skipToLookaheadSize(),
+                            .fillMaxSize(),
                         placeholder = {
                             Text(
                                 "Querido yo del futuro, hoy me siento...",
@@ -198,8 +166,7 @@ fun AddCapsuleScreen(
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.skipToLookaheadSize()
-                    ) {
+                        modifier = Modifier                    ) {
                         items(uiState.attachedFiles) { file ->
                             InputChip(
                                 selected = false,
@@ -241,8 +208,7 @@ fun AddCapsuleScreen(
                 // Panel de herramientas (Bottom Sheet Falso)
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .skipToLookaheadSize(),
+                        .fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                     color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.95f),
                     tonalElevation = 3.dp
@@ -336,7 +302,6 @@ fun AddCapsuleScreen(
                 }
             }
         }
-    }
 
     // Date Picker Dialog
     if (uiState.showDatePicker) {

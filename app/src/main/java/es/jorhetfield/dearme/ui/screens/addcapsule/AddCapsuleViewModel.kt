@@ -80,8 +80,6 @@ class AddCapsuleViewModel @Inject constructor(
                     isOpened = false
                 )
 
-                repository.createCapsule(capsule)
-
                 _uiState.update { it.copy(
                     isSealing = false,
                     isSaved = true

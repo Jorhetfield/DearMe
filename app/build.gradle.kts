@@ -86,6 +86,9 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.coil.compose)
 
+    // Security (Encrypted Preferences)
+    implementation(libs.androidx.security.crypto)
+
     // Test
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

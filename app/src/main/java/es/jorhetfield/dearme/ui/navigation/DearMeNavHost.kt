@@ -1,8 +1,13 @@
 package es.jorhetfield.dearme.ui.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -41,13 +46,23 @@ fun DearMeNavHost(
             startDestination = startDestination,
             modifier = modifier
         ) {
-            composable(Screen.Onboarding.route) {
+            composable(
+                route = Screen.Onboarding.route,
+                exitTransition = { slideExitToLeft() },
+                popEnterTransition = { slideEnterFromLeft() }
+            ) {
                 OnboardingScreen(
                     onGetStarted = { navController.navigate(Screen.Login.route) }
                 )
             }
 
-            composable(Screen.Login.route) {
+            composable(
+                route = Screen.Login.route,
+                enterTransition = { slideEnterFromRight() },
+                exitTransition = { slideExitToLeft() },
+                popEnterTransition = { slideEnterFromLeft() },
+                popExitTransition = { slideExitToRight() }
+            ) {
                 LoginScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onLoginSuccess = {
@@ -60,7 +75,13 @@ fun DearMeNavHost(
                 )
             }
 
-            composable(Screen.SignUp.route) {
+            composable(
+                route = Screen.SignUp.route,
+                enterTransition = { slideEnterFromRight() },
+                exitTransition = { slideExitToLeft() },
+                popEnterTransition = { slideEnterFromLeft() },
+                popExitTransition = { slideExitToRight() }
+            ) {
                 SignUpScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onSignUpSuccess = {
@@ -73,7 +94,27 @@ fun DearMeNavHost(
                 )
             }
 
-            composable(Screen.Vault.route) {
+            composable(
+                route = Screen.Vault.route,
+                enterTransition = {
+                    when (initialState.destination.route) {
+                        Screen.Login.route, Screen.SignUp.route -> slideEnterFromRight()
+                        else -> EnterTransition.None
+                    }
+                },
+                exitTransition = {
+                    when (targetState.destination.route) {
+                        Screen.Profile.route, Screen.AddCapsule.route -> fadeOut(animationSpec = tween(250))
+                        else -> ExitTransition.None
+                    }
+                },
+                popEnterTransition = {
+                    when (initialState.destination.route) {
+                        Screen.Profile.route, Screen.AddCapsule.route -> fadeIn(animationSpec = tween(250))
+                        else -> EnterTransition.None
+                    }
+                }
+            ) {
                 BackHandler { onExitApp() }
                 VaultScreen(
                     onNavigateToAddCapsule = { navController.navigate(Screen.AddCapsule.route) },
@@ -86,25 +127,33 @@ fun DearMeNavHost(
                 )
             }
 
-            composable(Screen.AddCapsule.route) {
+            composable(
+                route = Screen.AddCapsule.route,
+                enterTransition = { slideEnterFromBottom() },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { slideExitToBottom() }
+            ) {
                 AddCapsuleScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onCapsuleSaved = { navController.popBackStack() },
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@composable
+                    onCapsuleSaved = { navController.popBackStack() }
                 )
             }
 
-            composable(Screen.Profile.route) {
+            composable(
+                route = Screen.Profile.route,
+                enterTransition = { slideEnterFromTop() },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { slideExitToTop() }
+            ) {
                 ProfileScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onLogout = {
                         navController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
                         }
-                    },
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@composable
+                    }
                 )
             }
 
@@ -112,12 +161,18 @@ fun DearMeNavHost(
                 route = Screen.CapsuleDetail.route,
                 arguments = listOf(
                     navArgument("capsuleId") { type = NavType.StringType }
-                )
+                ),
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None }
             ) { backStackEntry ->
                 val capsuleId = backStackEntry.arguments?.getString("capsuleId") ?: return@composable
                 CapsuleDetailScreen(
                     capsuleId = capsuleId,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable
                 )
             }
         }

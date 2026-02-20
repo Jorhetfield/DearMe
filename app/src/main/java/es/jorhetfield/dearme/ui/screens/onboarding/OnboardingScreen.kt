@@ -99,7 +99,10 @@ fun OnboardingScreen(
 
             // Botón de acción (Pill shape)
             Button(
-                onClick = onGetStarted,
+                onClick = {
+                    viewModel.onGetStarted()
+                    onGetStarted()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
