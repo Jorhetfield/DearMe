@@ -105,12 +105,14 @@ fun DearMeNavHost(
                 exitTransition = {
                     when (targetState.destination.route) {
                         Screen.Profile.route, Screen.AddCapsule.route -> fadeOut(animationSpec = tween(250))
+                        Screen.CapsuleDetail.route -> ExitTransition.None
                         else -> ExitTransition.None
                     }
                 },
                 popEnterTransition = {
                     when (initialState.destination.route) {
                         Screen.Profile.route, Screen.AddCapsule.route -> fadeIn(animationSpec = tween(250))
+                        Screen.CapsuleDetail.route -> EnterTransition.None
                         else -> EnterTransition.None
                     }
                 }
@@ -162,10 +164,10 @@ fun DearMeNavHost(
                 arguments = listOf(
                     navArgument("capsuleId") { type = NavType.StringType }
                 ),
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None }
+                enterTransition = { slideEnterFromRightOpaque() },
+                exitTransition = { slideExitToLeftOpaque() },
+                popEnterTransition = { slideEnterFromLeftOpaque() },
+                popExitTransition = { slideExitToRightOpaque() }
             ) { backStackEntry ->
                 val capsuleId = backStackEntry.arguments?.getString("capsuleId") ?: return@composable
                 CapsuleDetailScreen(

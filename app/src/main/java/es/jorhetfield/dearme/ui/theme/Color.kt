@@ -83,3 +83,52 @@ val DarkScrim = Color(0xFF000000)
 val DarkSurfaceContainer = Color(0xFF2E2620)
 val DarkSurfaceContainerHigh = Color(0xFF362E27)
 val DarkSurfaceContainerHighest = Color(0xFF41362F)
+
+// --- CAPSULE CARD PALETTE --- Subtle pastel colors for light mode
+val CapsuleLight1 = Color(0xFFFDD6D3)  // Soft peach
+val CapsuleLight2 = Color(0xFFD6EDEA)  // Soft cyan
+val CapsuleLight3 = Color(0xFFF0E4F0)  // Soft lavender
+val CapsuleLight4 = Color(0xFFE8EDD5)  // Soft sage
+val CapsuleLight5 = Color(0xFFFFE4D6)  // Soft apricot
+val CapsuleLight6 = Color(0xFFE8D5E8)  // Soft mauve
+val CapsuleLight7 = Color(0xFFD6E8E0)  // Soft mint
+val CapsuleLight8 = Color(0xFFFBE4D6)  // Soft coral
+val CapsuleLight9 = Color(0xFFE4E8F0)  // Soft periwinkle
+val CapsuleLight10 = Color(0xFFFFF0D6) // Soft cream
+
+// --- CAPSULE CARD PALETTE --- Darker, less vivid colors for dark mode
+val CapsuleDark1 = Color(0xFF5C4B49)   // Warm mauve-brown
+val CapsuleDark2 = Color(0xFF3A4A48)   // Cool slate-teal
+val CapsuleDark3 = Color(0xFF4A4055)   // Muted purple
+val CapsuleDark4 = Color(0xFF45483D)   // Muted moss-green
+val CapsuleDark5 = Color(0xFF5C4D44)   // Warm taupe
+val CapsuleDark6 = Color(0xFF52465A)   // Muted mauve
+val CapsuleDark7 = Color(0xFF3F524A)   // Muted sage
+val CapsuleDark8 = Color(0xFF59495F)   // Muted plum
+val CapsuleDark9 = Color(0xFF48515F)   // Muted slate
+val CapsuleDark10 = Color(0xFF54523F)  // Muted olive
+
+// --- TEXT COLOR PALETTE --- Contrasting text colors for each card
+// Light mode text (dark text on light backgrounds)
+val CapsuleLightText1 = Color(0xFF8B5A3C)  // Warm brown
+val CapsuleLightText2 = Color(0xFF2D5A54)  // Teal
+val CapsuleLightText3 = Color(0xFF604B7A)  // Purple
+val CapsuleLightText4 = Color(0xFF556B4F)  // Moss
+val CapsuleLightText5 = Color(0xFF8B6F47)  // Bronze
+val CapsuleLightText6 = Color(0xFF5F4B7A)  // Plum
+val CapsuleLightText7 = Color(0xFF3D6B5F)  // Deep mint
+val CapsuleLightText8 = Color(0xFF8B5F4F)  // Rust
+val CapsuleLightText9 = Color(0xFF4A5B8B)  // Deep blue
+val CapsuleLightText10 = Color(0xFF8B7F3F) // Olive-gold
+
+// Dark mode text (light text on dark backgrounds)
+val CapsuleDarkText1 = Color(0xFFF5D9C8)   // Light peach
+val CapsuleDarkText2 = Color(0xFFC8E8E0)   // Light cyan
+val CapsuleDarkText3 = Color(0xFFE8D5F5)   // Light lavender
+val CapsuleDarkText4 = Color(0xFFD8E5CC)   // Light sage
+val CapsuleDarkText5 = Color(0xFFF0D9C8)   // Light apricot
+val CapsuleDarkText6 = Color(0xFFE8D0F5)   // Light mauve
+val CapsuleDarkText7 = Color(0xFFC8E0D5)   // Light mint
+val CapsuleDarkText8 = Color(0xFFF5D4C8)   // Light coral
+val CapsuleDarkText9 = Color(0xFFD8DCFE)   // Light periwinkle
+val CapsuleDarkText10 = Color(0xFFFFF8D8)  // Light cream

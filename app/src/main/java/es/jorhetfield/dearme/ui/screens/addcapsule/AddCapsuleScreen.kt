@@ -34,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +48,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,8 +57,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
-import es.jorhetfield.dearme.ui.components.ErrorDialog
-import es.jorhetfield.dearme.ui.components.LoadingOverlay
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,10 +67,18 @@ fun AddCapsuleScreen(
     viewModel: AddCapsuleViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             onCapsuleSaved()
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        if (uiState.error != null) {
+            snackbarHostState.showSnackbar(uiState.error!!)
+            viewModel.clearError()
         }
     }
 
@@ -83,8 +91,9 @@ fun AddCapsuleScreen(
     }
 
     BaseScaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
+            snackbarHostState = snackbarHostState,
+            topBar = {
+                CenterAlignedTopAppBar(
                 title = {
                     Text(
                         "Nueva Cápsula",
@@ -278,7 +287,9 @@ fun AddCapsuleScreen(
                         // Botón Sellar (Derecha)
                         ExtendedFloatingActionButton(
                             onClick = {
-                                viewModel.onSealCapsule()
+                                if (!uiState.isSealing) {
+                                    viewModel.onSealCapsule()
+                                }
                             },
                             icon = {
                                 if (uiState.isSealing) {
@@ -414,21 +425,6 @@ fun AddCapsuleScreen(
             containerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
             textContentColor = MaterialTheme.colorScheme.onSurface
-        )
-    }
-
-    // Loading overlay
-    if (uiState.isLoading || uiState.isSealing) {
-        LoadingOverlay()
-    }
-
-    // Error dialog
-    if (uiState.error != null) {
-        ErrorDialog(
-            message = uiState.error!!,
-            onDismiss = {
-                viewModel.clearError()
-            }
         )
     }
 }

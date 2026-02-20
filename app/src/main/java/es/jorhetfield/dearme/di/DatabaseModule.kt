@@ -2,6 +2,7 @@ package es.jorhetfield.dearme.di
 
 import android.app.Application
 import androidx.room.Room
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,4 +30,8 @@ object DatabaseModule {
     fun provideCapsuleDao(db: AppDatabase): CapsuleDao {
         return db.capsuleDao()
     }
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 }

@@ -4,10 +4,10 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -40,13 +39,52 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.domain.model.Capsule
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ErrorDialog
+import es.jorhetfield.dearme.ui.theme.CapsuleDark1
+import es.jorhetfield.dearme.ui.theme.CapsuleDark10
+import es.jorhetfield.dearme.ui.theme.CapsuleDark2
+import es.jorhetfield.dearme.ui.theme.CapsuleDark3
+import es.jorhetfield.dearme.ui.theme.CapsuleDark4
+import es.jorhetfield.dearme.ui.theme.CapsuleDark5
+import es.jorhetfield.dearme.ui.theme.CapsuleDark6
+import es.jorhetfield.dearme.ui.theme.CapsuleDark7
+import es.jorhetfield.dearme.ui.theme.CapsuleDark8
+import es.jorhetfield.dearme.ui.theme.CapsuleDark9
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText1
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText10
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText2
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText3
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText4
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText5
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText6
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText7
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText8
+import es.jorhetfield.dearme.ui.theme.CapsuleDarkText9
+import es.jorhetfield.dearme.ui.theme.CapsuleLight1
+import es.jorhetfield.dearme.ui.theme.CapsuleLight10
+import es.jorhetfield.dearme.ui.theme.CapsuleLight2
+import es.jorhetfield.dearme.ui.theme.CapsuleLight3
+import es.jorhetfield.dearme.ui.theme.CapsuleLight4
+import es.jorhetfield.dearme.ui.theme.CapsuleLight5
+import es.jorhetfield.dearme.ui.theme.CapsuleLight6
+import es.jorhetfield.dearme.ui.theme.CapsuleLight7
+import es.jorhetfield.dearme.ui.theme.CapsuleLight8
+import es.jorhetfield.dearme.ui.theme.CapsuleLight9
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText1
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText10
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText2
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText3
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText4
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText5
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText6
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText7
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText8
+import es.jorhetfield.dearme.ui.theme.CapsuleLightText9
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -119,10 +157,14 @@ fun VaultScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize().padding(paddingValues)
                 ) {
-                    items(uiState.capsules, key = { it.id }) { capsule ->
+                    items(
+                        count = uiState.capsules.size,
+                        key = { index -> uiState.capsules[index].id }
+                    ) { index ->
                         CapsuleCard(
-                            capsule = capsule,
-                            onClick = { onNavigateToCapsuleDetail(capsule.id) },
+                            capsule = uiState.capsules[index],
+                            onClick = { onNavigateToCapsuleDetail(uiState.capsules[index].id) },
+                            colorIndex = index,
                             sharedTransitionScope = this@with,
                             animatedVisibilityScope = animatedVisibilityScope
                         )
@@ -176,6 +218,7 @@ private fun EmptyVaultContent(modifier: Modifier = Modifier) {
 private fun CapsuleCard(
     capsule: Capsule,
     onClick: () -> Unit,
+    colorIndex: Int = 0,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
@@ -184,6 +227,8 @@ private fun CapsuleCard(
     val unlockDateFormatted = remember(capsule.unlockDate) {
         dateFormat.format(Date(capsule.unlockDate))
     }
+
+    val (backgroundColor, onBackgroundColor) = getCardColors(colorIndex)
 
     with(sharedTransitionScope) {
         Card(
@@ -198,65 +243,80 @@ private fun CapsuleCard(
                     boundsTransform = { _, _ -> tween(durationMillis = 400) }
                 ),
             colors = CardDefaults.cardColors(
-                containerColor = if (capsule.isLocked) {
-                    MaterialTheme.colorScheme.surfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.primaryContainer
-                }
+                containerColor = backgroundColor
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (capsule.isLocked) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = "Bloqueada",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+            if (capsule.isLocked) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "Bloqueada",
+                    tint = onBackgroundColor,
+                    modifier = Modifier.size(100.dp)
+                )
+            } else {
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = onBackgroundColor.copy(alpha = 0.8f),
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Text(
+                        text = "¡Ábreme!",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = backgroundColor,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     )
-                } else {
-                    Surface(
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(4.dp)
-                    ) {
-                        Text(
-                            text = "¡Ábreme!",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                        )
-                    }
                 }
             }
 
-            Column {
-                if (capsule.message != null) {
-                    Text(
-                        text = capsule.message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Desbloqueo: $unlockDateFormatted",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Desbloqueo: $unlockDateFormatted",
+                style = MaterialTheme.typography.labelMedium,
+                color = onBackgroundColor
+            )
         }
     }
+    }
+}
+
+@Composable
+private fun getCardColors(index: Int): Pair<Color, Color> {
+    val isDarkMode = isSystemInDarkTheme()
+
+    return if (isDarkMode) {
+        when (index % 10) {
+            0 -> Pair(CapsuleDark1, CapsuleDarkText1)
+            1 -> Pair(CapsuleDark2, CapsuleDarkText2)
+            2 -> Pair(CapsuleDark3, CapsuleDarkText3)
+            3 -> Pair(CapsuleDark4, CapsuleDarkText4)
+            4 -> Pair(CapsuleDark5, CapsuleDarkText5)
+            5 -> Pair(CapsuleDark6, CapsuleDarkText6)
+            6 -> Pair(CapsuleDark7, CapsuleDarkText7)
+            7 -> Pair(CapsuleDark8, CapsuleDarkText8)
+            8 -> Pair(CapsuleDark9, CapsuleDarkText9)
+            else -> Pair(CapsuleDark10, CapsuleDarkText10)
+        }
+    } else {
+        when (index % 10) {
+            0 -> Pair(CapsuleLight1, CapsuleLightText1)
+            1 -> Pair(CapsuleLight2, CapsuleLightText2)
+            2 -> Pair(CapsuleLight3, CapsuleLightText3)
+            3 -> Pair(CapsuleLight4, CapsuleLightText4)
+            4 -> Pair(CapsuleLight5, CapsuleLightText5)
+            5 -> Pair(CapsuleLight6, CapsuleLightText6)
+            6 -> Pair(CapsuleLight7, CapsuleLightText7)
+            7 -> Pair(CapsuleLight8, CapsuleLightText8)
+            8 -> Pair(CapsuleLight9, CapsuleLightText9)
+            else -> Pair(CapsuleLight10, CapsuleLightText10)
+        }
     }
 }

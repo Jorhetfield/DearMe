@@ -41,6 +41,35 @@ val slideExitToRight: AnimatedContentTransitionScope<NavBackStackEntry>.() -> Ex
     ) + fadeOut(animationSpec = tween(durationMillis = 400))
 }
 
+// Horizontal transitions without fade (for opaque screens like CapsuleDetail)
+val slideEnterFromRightOpaque: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    slideInHorizontally(
+        initialOffsetX = { it },
+        animationSpec = tween(durationMillis = 400)
+    )
+}
+
+val slideExitToLeftOpaque: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    slideOutHorizontally(
+        targetOffsetX = { -it },
+        animationSpec = tween(durationMillis = 400)
+    )
+}
+
+val slideEnterFromLeftOpaque: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+    slideInHorizontally(
+        initialOffsetX = { -it },
+        animationSpec = tween(durationMillis = 400)
+    )
+}
+
+val slideExitToRightOpaque: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+    slideOutHorizontally(
+        targetOffsetX = { it },
+        animationSpec = tween(durationMillis = 400)
+    )
+}
+
 // Vertical transitions - Profile (from top)
 val slideEnterFromTop: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
     slideInVertically(
