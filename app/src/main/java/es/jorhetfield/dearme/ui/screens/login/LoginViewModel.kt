@@ -3,7 +3,7 @@ package es.jorhetfield.dearme.ui.screens.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import es.jorhetfield.dearme.domain.repository.CapsuleRepository
+import es.jorhetfield.dearme.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val repository: CapsuleRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -41,47 +41,34 @@ class LoginViewModel @Inject constructor(
 
     fun onLoginClick() {
         viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-                // TODO: Implement Firebase Authentication
-                // val result = firebaseAuth.signInWithEmailAndPassword(
-                //     currentState.email,
-                //     currentState.password
-                // )
+            val currentState = _uiState.value
 
-                // Simulated success for now
+            // Call Firebase Authentication
+            val result = authRepository.signInWithEmail(
+                email = currentState.email,
+                password = currentState.password
+            )
+
+            result.onSuccess {
                 _uiState.update { it.copy(
                     isLoading = false,
                     isLoginSuccess = true
                 ) }
-            } catch (e: Exception) {
+            }.onFailure { exception ->
                 _uiState.update { it.copy(
                     isLoading = false,
-                    error = e.message ?: "Error al iniciar sesión"
+                    error = exception.message ?: "Error al iniciar sesión"
                 ) }
             }
         }
     }
 
     fun onGoogleLoginClick() {
-        viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true, error = null) }
-
-                // TODO: Implement Google Sign In
-
-                _uiState.update { it.copy(
-                    isLoading = false,
-                    isLoginSuccess = true
-                ) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error con Google Sign In"
-                ) }
-            }
-        }
+        _uiState.update { it.copy(
+            error = "Google Sign In será implementado en una próxima versión"
+        ) }
     }
 
     fun clearError() {

@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -93,6 +95,7 @@ fun ProfileScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(24.dp)
+                    .verticalScroll(rememberScrollState())
                     .skipToLookaheadSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -182,10 +185,11 @@ fun ProfileScreen(
 
                 // Cerrar sesión
                 TextButton(
-                    onClick = onLogout,
+                    onClick = { viewModel.onLogoutClick(onLogout) },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
-                    )
+                    ),
+                    enabled = !uiState.isLoading
                 ) {
                     Text(
                         text = "Cerrar Sesión",

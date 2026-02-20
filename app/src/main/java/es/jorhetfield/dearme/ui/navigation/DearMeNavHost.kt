@@ -10,6 +10,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import es.jorhetfield.dearme.data.preferences.OnboardingPreferencesRepository
+import es.jorhetfield.dearme.domain.repository.AuthRepository
 import es.jorhetfield.dearme.ui.screens.addcapsule.AddCapsuleScreen
 import es.jorhetfield.dearme.ui.screens.detail.CapsuleDetailScreen
 import es.jorhetfield.dearme.ui.screens.login.LoginScreen
@@ -23,12 +25,20 @@ import es.jorhetfield.dearme.ui.screens.vault.VaultScreen
 fun DearMeNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    onExitApp: () -> Unit
+    onExitApp: () -> Unit,
+    preferencesRepository: OnboardingPreferencesRepository,
+    authRepository: AuthRepository
 ) {
+    val startDestination = when {
+        !preferencesRepository.isOnboardingCompleted() -> Screen.Onboarding.route
+        authRepository.isUserLoggedIn -> Screen.Vault.route
+        else -> Screen.Login.route
+    }
+
     SharedTransitionLayout {
         NavHost(
             navController = navController,
-            startDestination = Screen.Onboarding.route,
+            startDestination = startDestination,
             modifier = modifier
         ) {
             composable(Screen.Onboarding.route) {
@@ -89,7 +99,7 @@ fun DearMeNavHost(
                 ProfileScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onLogout = {
-                        navController.navigate(Screen.Onboarding.route) {
+                        navController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
                         }
                     },

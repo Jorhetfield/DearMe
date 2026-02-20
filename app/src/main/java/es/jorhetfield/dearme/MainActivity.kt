@@ -12,11 +12,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import es.jorhetfield.dearme.data.preferences.OnboardingPreferencesRepository
+import es.jorhetfield.dearme.domain.repository.AuthRepository
 import es.jorhetfield.dearme.ui.navigation.DearMeNavHost
 import es.jorhetfield.dearme.ui.theme.DearMeTheme
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var onboardingPreferencesRepository: OnboardingPreferencesRepository
+
+    @Inject
+    lateinit var authRepository: AuthRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -49,7 +58,9 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     DearMeNavHost(
                         navController = navController,
-                        onExitApp = { finish() }
+                        onExitApp = { finish() },
+                        preferencesRepository = onboardingPreferencesRepository,
+                        authRepository = authRepository
                     )
                 }
             }
