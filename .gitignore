@@ -78,8 +78,8 @@ captures/
 .cxx/
 
 # Google Services (e.g. APIs or Firebase)
-# Comment this if you want to check in google-services.json
-# google-services.json
+# Never commit google-services.json as it contains sensitive credentials
+google-services.json
 
 # Freeline
 freeline.py
@@ -130,3 +130,12 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# Sensitive configuration files
+.env
+.env.local
+secrets.properties
+signing.properties
+*.key
+*.p12
+*.pfx
