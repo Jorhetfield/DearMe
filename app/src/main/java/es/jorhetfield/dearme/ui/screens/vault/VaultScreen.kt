@@ -46,8 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.domain.model.Capsule
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
 import es.jorhetfield.dearme.ui.components.BaseScaffold
-import es.jorhetfield.dearme.ui.components.BaseTopAppBar
 import es.jorhetfield.dearme.ui.viewmodel.CapsuleViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -68,7 +70,7 @@ fun VaultScreen(
     with(sharedTransitionScope) {
         BaseScaffold(
             topBar = {
-                BaseTopAppBar(
+                TopAppBar(
                     title = {
                         Text(
                             "Dear Me",
@@ -103,7 +105,11 @@ fun VaultScreen(
                                 )
                             }
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent
+                    )
                 )
             },
             floatingActionButton = {

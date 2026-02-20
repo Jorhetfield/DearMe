@@ -44,8 +44,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
 import es.jorhetfield.dearme.ui.components.BaseScaffold
-import es.jorhetfield.dearme.ui.components.BaseTopAppBar
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -66,7 +68,7 @@ fun ProfileScreen(
                 }
             ),
             topBar = {
-                BaseTopAppBar(
+                TopAppBar(
                     title = { },
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
@@ -75,7 +77,11 @@ fun ProfileScreen(
                                 contentDescription = "Atrás"
                             )
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent
+                    )
                 )
             }
         ) { paddingValues ->

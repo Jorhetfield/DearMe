@@ -36,20 +36,18 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -57,6 +55,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -67,18 +66,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.domain.model.Capsule
 import es.jorhetfield.dearme.domain.model.MediaType
-import es.jorhetfield.dearme.ui.components.BaseCenterAlignedTopAppBar
 import es.jorhetfield.dearme.ui.components.BaseScaffold
+import es.jorhetfield.dearme.ui.components.ErrorDialog
+import es.jorhetfield.dearme.ui.components.LoadingOverlay
 import es.jorhetfield.dearme.ui.viewmodel.CapsuleViewModel
-import java.text.SimpleDateFormat
+import es.jorhetfield.dearme.ui.viewmodel.UiState
 import java.util.Calendar
-import java.util.Locale
 import java.util.UUID
 import kotlin.random.Random
 
@@ -100,6 +99,9 @@ fun AddCapsuleScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var isSealing by remember { mutableStateOf(false) }
     var attachedFiles by remember { mutableStateOf<List<AttachedFile>>(emptyList()) }
+    var showErrorDialog by remember { mutableStateOf<String?>(null) }
+
+    val operationState by viewModel.operationState.collectAsStateWithLifecycle()
 
     val hasChanges = message.isNotBlank()
     val unlockDate = remember(selectedDateMillis, selectedHour, selectedMinute) {
@@ -136,7 +138,7 @@ fun AddCapsuleScreen(
                 }
             ),
             topBar = {
-                BaseCenterAlignedTopAppBar(
+                CenterAlignedTopAppBar(
                     title = {
                         Text(
                             "Nueva Cápsula",
@@ -160,7 +162,11 @@ fun AddCapsuleScreen(
                                 contentDescription = "Información"
                             )
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent
+                    )
                 )
             }
         ) { paddingValues ->
@@ -472,113 +478,32 @@ fun AddCapsuleScreen(
             textContentColor = MaterialTheme.colorScheme.onSurface
         )
     }
-}
-@Composable
-private fun DateSelector(
-    selectedDateMillis: Long?,
-    selectedHour: Int?,
-    selectedMinute: Int?,
-    onDateClick: () -> Unit,
-    onSurpriseClick: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Etiqueta
-        Text(
-            text = "FECHA DE ENTREGA",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.SemiBold
-        )
 
-        // Fila de botones
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Botón Preciso
-            OutlinedButton(
-                onClick = onDateClick,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.DateRange,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Elegir fecha")
-            }
-
-            // Botón Sorpresa
-            FilledTonalButton(
-                onClick = onSurpriseClick,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Refresh,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Sorpréndeme")
+    when (operationState) {
+        is UiState.Loading -> {
+            LoadingOverlay()
+        }
+        is UiState.Error -> {
+            val errorMessage = (operationState as UiState.Error<Unit>).message
+            if (showErrorDialog == null) {
+                showErrorDialog = errorMessage
             }
         }
-
-        // Resumen de fecha seleccionada
-        if (selectedDateMillis != null && selectedHour != null && selectedMinute != null) {
-            val dateFormat = SimpleDateFormat("dd MMM yyyy 'a las' HH:mm", Locale.getDefault())
-            val unlockDate = Calendar.getInstance().apply {
-                timeInMillis = selectedDateMillis
-                set(Calendar.HOUR_OF_DAY, selectedHour)
-                set(Calendar.MINUTE, selectedMinute)
-            }.time
-            val daysFromNow = ((unlockDate.time - System.currentTimeMillis()) / (24 * 60 * 60 * 1000)).toInt()
-
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = dateFormat.format(unlockDate),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Dentro de $daysFromNow días",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+        is UiState.Success -> {
+            isSealing = false
+        }
+        is UiState.Idle -> {
+            isSealing = false
         }
     }
-}
 
-// Data class para archivos adjuntos
-data class AttachedFile(
-    val name: String,
-    val type: FileType
-)
-
-enum class FileType {
-    AUDIO, PHOTO
+    if (showErrorDialog != null) {
+        ErrorDialog(
+            message = showErrorDialog!!,
+            onDismiss = {
+                showErrorDialog = null
+                viewModel.clearError()
+            }
+        )
+    }
 }
