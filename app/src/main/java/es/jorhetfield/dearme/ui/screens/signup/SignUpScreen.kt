@@ -20,8 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -40,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ErrorDialog
 import es.jorhetfield.dearme.ui.components.LoadingOverlay
+import es.jorhetfield.dearme.ui.components.SoftTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,42 +105,27 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Formulario
-            OutlinedTextField(
+            SoftTextField(
                 value = uiState.fullName,
                 onValueChange = { viewModel.onFullNameChanged(it) },
                 label = { Text("Nombre completo") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
+            SoftTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.onEmailChanged(it) },
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
                 isError = uiState.email.isNotBlank() && !uiState.isEmailValid
             )
 
-            OutlinedTextField(
+            SoftTextField(
                 value = uiState.password,
                 onValueChange = { viewModel.onPasswordChanged(it) },
                 label = { Text("Contraseña") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
                 isError = uiState.password.isNotBlank() && !uiState.isPasswordValid
             )
 
@@ -154,17 +138,12 @@ fun SignUpScreen(
                 )
             }
 
-            OutlinedTextField(
+            SoftTextField(
                 value = uiState.confirmPassword,
                 onValueChange = { viewModel.onConfirmPasswordChanged(it) },
                 label = { Text("Confirmar contraseña") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
                 isError = uiState.confirmPassword.isNotBlank() && !uiState.isPasswordsMatch
             )
 

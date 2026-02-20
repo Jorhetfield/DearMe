@@ -84,224 +84,225 @@ fun AddCapsuleScreen(
 
     BaseScaffold(
         topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Nueva Cápsula",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        if (uiState.hasChanges) {
+                            viewModel.onShowBackDialog(true)
+                        } else {
+                            onNavigateBack()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cerrar"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: Show help */ }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = "Información"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                )
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Área de redacción (ocupa el espacio principal)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                // Campo de texto (Editor limpio)
+                TextField(
+                    value = uiState.message,
+                    onValueChange = { viewModel.onMessageChanged(it) },
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    placeholder = {
                         Text(
-                            "Nueva Cápsula",
-                            style = MaterialTheme.typography.titleMedium
+                            "Querido yo del futuro, hoy me siento...",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                lineHeight = 32.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
                     },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            if (uiState.hasChanges) {
-                                viewModel.onShowBackDialog(true)
-                            } else {
-                                onNavigateBack()
-                            }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Cerrar"
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { /* TODO: Show help */ }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Info,
-                                contentDescription = "Información"
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        lineHeight = 32.sp
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
                     )
                 )
             }
-        ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                // Área de redacción (ocupa el espacio principal)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
-                ) {
-                    // Campo de texto (Editor limpio)
-                    TextField(
-                        value = uiState.message,
-                        onValueChange = { viewModel.onMessageChanged(it) },
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        placeholder = {
-                            Text(
-                                "Querido yo del futuro, hoy me siento...",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    lineHeight = 32.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        },
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            lineHeight = 32.sp
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                        )
-                    )
-                }
 
-                // Carrusel de adjuntos (si hay archivos)
-                if (uiState.attachedFiles.isNotEmpty()) {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier                    ) {
-                        items(uiState.attachedFiles) { file ->
-                            InputChip(
-                                selected = false,
-                                onClick = { },
-                                label = { Text(file.name) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = when(file.type) {
-                                            FileType.AUDIO -> Icons.Filled.Phone
-                                            FileType.PHOTO -> Icons.Filled.Person
-                                        },
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = {
-                                            viewModel.onAttachedFileRemoved(file)
-                                        },
-                                        modifier = Modifier.size(18.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Close,
-                                            contentDescription = "Eliminar",
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = InputChipDefaults.inputChipColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+            // Carrusel de adjuntos (si hay archivos)
+            if (uiState.attachedFiles.isNotEmpty()) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                ) {
+                    items(uiState.attachedFiles) { file ->
+                        InputChip(
+                            selected = false,
+                            onClick = { },
+                            label = { Text(file.name) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = when (file.type) {
+                                        FileType.AUDIO -> Icons.Filled.Phone
+                                        FileType.PHOTO -> Icons.Filled.Person
+                                    },
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
                                 )
+                            },
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        viewModel.onAttachedFileRemoved(file)
+                                    },
+                                    modifier = Modifier.size(18.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Eliminar",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = InputChipDefaults.inputChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
-                        }
+                        )
                     }
                 }
+            }
 
-                // Panel de herramientas (Bottom Sheet Falso)
-                Surface(
+            // Panel de herramientas (Bottom Sheet Falso)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.95f),
+                tonalElevation = 3.dp
+            ) {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.95f),
-                    tonalElevation = 3.dp
+                        .padding(24.dp)
+                        .padding(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(24.dp)
-                            .padding(bottom = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Selector de fecha
-                        DateSelector(
-                            selectedDateMillis = uiState.selectedDateMillis,
-                            selectedHour = uiState.selectedHour,
-                            selectedMinute = uiState.selectedMinute,
-                            onDateClick = { viewModel.onShowDatePicker(true) },
-                            onSurpriseClick = {
-                                // Fecha aleatoria
-                                val now = System.currentTimeMillis()
-                                val maxDays = 30L * 24 * 60 * 60 * 1000
-                                val randomMillis = now + Random.nextLong(1, maxDays)
-                                val cal = java.util.Calendar.getInstance().apply {
-                                    timeInMillis = randomMillis
-                                }
-                                viewModel.onDateMillisSelected(cal.apply {
-                                    set(java.util.Calendar.HOUR_OF_DAY, 0)
-                                    set(java.util.Calendar.MINUTE, 0)
-                                    set(java.util.Calendar.SECOND, 0)
-                                    set(java.util.Calendar.MILLISECOND, 0)
-                                }.timeInMillis)
-                                viewModel.onTimeSelected(
-                                    cal.get(java.util.Calendar.HOUR_OF_DAY),
-                                    cal.get(java.util.Calendar.MINUTE)
-                                )
+                    // Selector de fecha
+                    DateSelector(
+                        selectedDateMillis = uiState.selectedDateMillis,
+                        selectedHour = uiState.selectedHour,
+                        selectedMinute = uiState.selectedMinute,
+                        onDateClick = { viewModel.onShowDatePicker(true) },
+                        onSurpriseClick = {
+                            // Fecha aleatoria
+                            val now = System.currentTimeMillis()
+                            val maxDays = 30L * 24 * 60 * 60 * 1000
+                            val randomMillis = now + Random.nextLong(1, maxDays)
+                            val cal = java.util.Calendar.getInstance().apply {
+                                timeInMillis = randomMillis
                             }
-                        )
-
-                        // Barra de acciones
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Multimedia (Izquierda)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                IconButton(onClick = { /* TODO: Camera */ }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Add,
-                                        contentDescription = "Cámara"
-                                    )
-                                }
-                                IconButton(onClick = { /* TODO: Microphone */ }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Phone,
-                                        contentDescription = "Micrófono"
-                                    )
-                                }
-                                IconButton(onClick = { /* TODO: Mood */ }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.FavoriteBorder,
-                                        contentDescription = "Emoción"
-                                    )
-                                }
-                            }
-
-                            // Botón Sellar (Derecha)
-                            ExtendedFloatingActionButton(
-                                onClick = {
-                                    viewModel.onSealCapsule()
-                                },
-                                icon = {
-                                    if (uiState.isSealing) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(24.dp),
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                            strokeWidth = 2.dp
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.Send,
-                                            contentDescription = null
-                                        )
-                                    }
-                                },
-                                text = { Text("Sellar") },
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            viewModel.onDateMillisSelected(cal.apply {
+                                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                                set(java.util.Calendar.MINUTE, 0)
+                                set(java.util.Calendar.SECOND, 0)
+                                set(java.util.Calendar.MILLISECOND, 0)
+                            }.timeInMillis)
+                            viewModel.onTimeSelected(
+                                cal.get(java.util.Calendar.HOUR_OF_DAY),
+                                cal.get(java.util.Calendar.MINUTE)
                             )
                         }
+                    )
+
+                    // Barra de acciones
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Multimedia (Izquierda)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            IconButton(onClick = { /* TODO: Camera */ }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Add,
+                                    contentDescription = "Cámara"
+                                )
+                            }
+                            IconButton(onClick = { /* TODO: Microphone */ }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Phone,
+                                    contentDescription = "Micrófono"
+                                )
+                            }
+                            IconButton(onClick = { /* TODO: Mood */ }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.FavoriteBorder,
+                                    contentDescription = "Emoción"
+                                )
+                            }
+                        }
+
+                        // Botón Sellar (Derecha)
+                        ExtendedFloatingActionButton(
+                            onClick = {
+                                viewModel.onSealCapsule()
+                            },
+                            icon = {
+                                if (uiState.isSealing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            text = { Text("Sellar") },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 }
             }
         }
+    }
 
     // Date Picker Dialog
     if (uiState.showDatePicker) {

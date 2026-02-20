@@ -136,6 +136,7 @@ fabric.properties
 .env.local
 secrets.properties
 signing.properties
+settings.local.json
 *.key
 *.p12
 *.pfx

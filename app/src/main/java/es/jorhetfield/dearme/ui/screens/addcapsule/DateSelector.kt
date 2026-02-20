@@ -34,9 +34,13 @@ fun DateSelector(
     selectedHour: Int?,
     selectedMinute: Int?,
     onDateClick: () -> Unit,
-    onSurpriseClick: () -> Unit
+    onSurpriseClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         Text(
             text = "FECHA DE ENTREGA",
             style = MaterialTheme.typography.labelSmall,

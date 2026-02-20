@@ -18,41 +18,85 @@ import androidx.core.view.WindowCompat
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
     onPrimary = DarkOnPrimary,
+    primaryContainer = DarkPrimaryContainer,
+    onPrimaryContainer = DarkOnPrimaryContainer,
+
+    secondary = DarkSecondary,
+    onSecondary = DarkOnSecondary,
+    secondaryContainer = DarkSecondaryContainer,
+    onSecondaryContainer = DarkOnSecondaryContainer,
+
+    tertiary = DarkTertiary,
+    onTertiary = DarkOnTertiary,
+    tertiaryContainer = DarkTertiaryContainer,
+    onTertiaryContainer = DarkOnTertiaryContainer,
+
+    error = DarkError,
+    onError = DarkOnError,
+    errorContainer = DarkErrorContainer,
+    onErrorContainer = DarkOnErrorContainer,
+
     background = DarkBackground,
     onBackground = DarkOnBackground,
+
     surface = DarkSurface,
-    onSurface = DarkOnBackground,
+    onSurface = DarkOnSurface,
 
-    // Asignación semántica para las cápsulas
-    primaryContainer = DarkUnlockedContainer,   // Desbloqueado
-    onPrimaryContainer = DarkOnUnlockedContainer,
-    surfaceVariant = DarkLockedContainer,       // Bloqueado
-    onSurfaceVariant = DarkOnLockedContainer,
+    surfaceVariant = DarkSurfaceVariant,
+    onSurfaceVariant = DarkOnSurfaceVariant,
 
-    secondary = DarkTertiary
+    outline = DarkOutline,
+    outlineVariant = DarkOutlineVariant,
+    scrim = DarkScrim,
+
+    surfaceContainer = DarkSurfaceContainer,
+    surfaceContainerHigh = DarkSurfaceContainerHigh,
+    surfaceContainerHighest = DarkSurfaceContainerHighest
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = LightPrimary,
     onPrimary = LightOnPrimary,
+    primaryContainer = LightPrimaryContainer,
+    onPrimaryContainer = LightOnPrimaryContainer,
+
+    secondary = LightSecondary,
+    onSecondary = LightOnSecondary,
+    secondaryContainer = LightSecondaryContainer,
+    onSecondaryContainer = LightOnSecondaryContainer,
+
+    tertiary = LightTertiary,
+    onTertiary = LightOnTertiary,
+    tertiaryContainer = LightTertiaryContainer,
+    onTertiaryContainer = LightOnTertiaryContainer,
+
+    error = LightError,
+    onError = LightOnError,
+    errorContainer = LightErrorContainer,
+    onErrorContainer = LightOnErrorContainer,
+
     background = LightBackground,
     onBackground = LightOnBackground,
+
     surface = LightSurface,
-    onSurface = LightOnBackground,
+    onSurface = LightOnSurface,
 
-    // Asignación semántica para las cápsulas
-    primaryContainer = LightUnlockedContainer,  // Desbloqueado
-    onPrimaryContainer = LightOnUnlockedContainer,
-    surfaceVariant = LightLockedContainer,      // Bloqueado
-    onSurfaceVariant = LightOnLockedContainer,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = LightOnSurfaceVariant,
 
-    secondary = LightTertiary
+    outline = LightOutline,
+    outlineVariant = LightOutlineVariant,
+    scrim = LightScrim,
+
+    surfaceContainer = LightSurfaceContainer,
+    surfaceContainerHigh = LightSurfaceContainerHigh,
+    surfaceContainerHighest = LightSurfaceContainerHighest
 )
 
 @Composable
 fun DearMeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic Color en FALSE para usar nuestra paleta personalizada
+    // Dynamic Color en FALSE para usar nuestra paleta personalizada Material You
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -77,6 +121,7 @@ fun DearMeTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }
