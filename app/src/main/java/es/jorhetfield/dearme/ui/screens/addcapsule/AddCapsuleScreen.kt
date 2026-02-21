@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
+import es.jorhetfield.dearme.ui.theme.Dimens
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,7 +141,7 @@ fun AddCapsuleScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .padding(horizontal = Dimens.Padding.generous, vertical = Dimens.Padding.comfortable)
             ) {
                 // Campo de texto (Editor limpio)
                 TextField(

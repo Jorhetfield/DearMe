@@ -18,8 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +32,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import es.jorhetfield.dearme.domain.model.Capsule
+import es.jorhetfield.dearme.ui.components.ExpressiveCard
+import es.jorhetfield.dearme.ui.theme.Dimens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -55,7 +55,7 @@ fun LockedContent(capsule: Capsule) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(Dimens.Padding.extra),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -66,7 +66,7 @@ fun LockedContent(capsule: Capsule) {
             tint = MaterialTheme.colorScheme.primary
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(Dimens.Spacing.xl))
 
         Text(
             text = "Esta cápsula está bloqueada",
@@ -74,16 +74,14 @@ fun LockedContent(capsule: Capsule) {
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
 
-        Card(
+        ExpressiveCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -91,7 +89,7 @@ fun LockedContent(capsule: Capsule) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.Spacing.sm))
                 Text(
                     text = unlockDateFormatted,
                     style = MaterialTheme.typography.titleLarge,
@@ -100,7 +98,7 @@ fun LockedContent(capsule: Capsule) {
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(Dimens.Spacing.xl))
 
         if (daysRemaining > 0 || hoursRemaining > 0) {
             Text(
@@ -116,7 +114,7 @@ fun LockedContent(capsule: Capsule) {
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
 
         Text(
             text = "Tu mensaje del pasado te está esperando...",
@@ -174,19 +172,15 @@ fun RevealedContent(capsule: Capsule) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(Dimens.Padding.comfortable)
             .verticalScroll(rememberScrollState())
     ) {
-        Card(
+        ExpressiveCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -210,21 +204,16 @@ fun RevealedContent(capsule: Capsule) {
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(Dimens.Spacing.xl))
 
-        Card(
+        ExpressiveCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp)
+                modifier = Modifier.fillMaxSize()
             ) {
                 capsule.message?.let { message ->
                     Text(
@@ -239,7 +228,7 @@ fun RevealedContent(capsule: Capsule) {
                 )
 
                 capsule.mediaPath?.let {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
                     Text(
                         text = "📎 Archivo adjunto: ${capsule.mediaType}",
                         style = MaterialTheme.typography.bodySmall,

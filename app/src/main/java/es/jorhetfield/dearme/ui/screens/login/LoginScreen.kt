@@ -13,13 +13,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -31,14 +29,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ErrorDialog
+import es.jorhetfield.dearme.ui.components.ExpressiveButton
+import es.jorhetfield.dearme.ui.components.ExpressiveOutlinedButton
+import es.jorhetfield.dearme.ui.components.ExpressivePasswordField
+import es.jorhetfield.dearme.ui.components.ExpressiveTextField
 import es.jorhetfield.dearme.ui.components.LoadingOverlay
-import es.jorhetfield.dearme.ui.components.SoftTextField
+import es.jorhetfield.dearme.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,11 +81,11 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = Dimens.Padding.generous)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.xl))
 
             // Encabezado
             Column {
@@ -94,7 +95,7 @@ fun LoginScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.Spacing.sm))
                 Text(
                     text = "Inicia sesión para acceder a tus cápsulas",
                     style = MaterialTheme.typography.bodyLarge,
@@ -102,44 +103,43 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.xl))
 
             // Formulario
-            SoftTextField(
-                value = uiState.email,
-                onValueChange = { viewModel.onEmailChanged(it) },
-                label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = uiState.email.isNotBlank() && !uiState.isEmailValid
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.sm)) {
+                ExpressiveTextField(
+                    value = uiState.email,
+                    onValueChange = { viewModel.onEmailChanged(it) },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = uiState.email.isNotBlank() && !uiState.isEmailValid
+                )
+                if (uiState.email.isNotBlank() && !uiState.isEmailValid) {
+                    Text(
+                        text = "Email inválido",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
 
-            SoftTextField(
+            ExpressivePasswordField(
                 value = uiState.password,
                 onValueChange = { viewModel.onPasswordChanged(it) },
                 label = { Text("Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation()
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Botón principal
-            Button(
+            ExpressiveButton(
                 onClick = { viewModel.onLoginClick() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-                enabled = uiState.isFormValid && !uiState.isLoading
-            ) {
-                Text(
-                    text = "Iniciar Sesión",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+                label = "Iniciar Sesión",
+                modifier = Modifier.fillMaxWidth(),
+                enabled = uiState.isFormValid && !uiState.isLoading,
+                textStyle = MaterialTheme.typography.titleMedium
+            )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.xl))
 
             // Separador
             Row(
@@ -149,39 +149,27 @@ fun LoginScreen(
                 HorizontalDivider(modifier = Modifier.weight(1f))
                 Text(
                     text = "O continúa con",
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = Dimens.Padding.comfortable),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Social Login
-            OutlinedButton(
+            ExpressiveOutlinedButton(
                 onClick = { viewModel.onGoogleLoginClick() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.large,
-                enabled = !uiState.isLoading
-            ) {
-                Text("G")
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Google",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
+                label = "Google",
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading,
+                textStyle = MaterialTheme.typography.titleMedium
+            )
 
             // Link al signup
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = Dimens.Spacing.sm),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -190,7 +178,7 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(Dimens.Spacing.xs))
                 TextButton(
                     onClick = onNavigateToSignUp,
                     modifier = Modifier.height(32.dp),
@@ -205,7 +193,7 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
         }
     }
 

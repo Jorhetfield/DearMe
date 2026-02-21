@@ -13,13 +13,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -31,14 +29,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ErrorDialog
+import es.jorhetfield.dearme.ui.components.ExpressiveButton
+import es.jorhetfield.dearme.ui.components.ExpressiveOutlinedButton
+import es.jorhetfield.dearme.ui.components.ExpressivePasswordField
+import es.jorhetfield.dearme.ui.components.ExpressiveTextField
 import es.jorhetfield.dearme.ui.components.LoadingOverlay
-import es.jorhetfield.dearme.ui.components.SoftTextField
+import es.jorhetfield.dearme.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,11 +81,11 @@ fun SignUpScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = Dimens.Padding.generous)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.xl))
 
             // Encabezado
             Column {
@@ -94,7 +95,7 @@ fun SignUpScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.Spacing.sm))
                 Text(
                     text = "Únete a DearMe y comienza a crear tus cápsulas del tiempo",
                     style = MaterialTheme.typography.bodyLarge,
@@ -102,79 +103,79 @@ fun SignUpScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.xl))
 
             // Formulario
-            SoftTextField(
+            ExpressiveTextField(
                 value = uiState.fullName,
                 onValueChange = { viewModel.onFullNameChanged(it) },
                 label = { Text("Nombre completo") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            SoftTextField(
-                value = uiState.email,
-                onValueChange = { viewModel.onEmailChanged(it) },
-                label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = uiState.email.isNotBlank() && !uiState.isEmailValid
-            )
-
-            SoftTextField(
-                value = uiState.password,
-                onValueChange = { viewModel.onPasswordChanged(it) },
-                label = { Text("Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(),
-                isError = uiState.password.isNotBlank() && !uiState.isPasswordValid
-            )
-
-            if (uiState.password.isNotBlank() && !uiState.isPasswordValid) {
-                Text(
-                    text = "La contraseña debe tener al menos 6 caracteres",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.sm)) {
+                ExpressiveTextField(
+                    value = uiState.email,
+                    onValueChange = { viewModel.onEmailChanged(it) },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = uiState.email.isNotBlank() && !uiState.isEmailValid
                 )
+                if (uiState.email.isNotBlank() && !uiState.isEmailValid) {
+                    Text(
+                        text = "Email inválido",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
 
-            SoftTextField(
-                value = uiState.confirmPassword,
-                onValueChange = { viewModel.onConfirmPasswordChanged(it) },
-                label = { Text("Confirmar contraseña") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(),
-                isError = uiState.confirmPassword.isNotBlank() && !uiState.isPasswordsMatch
-            )
-
-            if (uiState.confirmPassword.isNotBlank() && !uiState.isPasswordsMatch) {
-                Text(
-                    text = "Las contraseñas no coinciden",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.sm)) {
+                ExpressivePasswordField(
+                    value = uiState.password,
+                    onValueChange = { viewModel.onPasswordChanged(it) },
+                    label = { Text("Contraseña") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = uiState.password.isNotBlank() && !uiState.isPasswordValid
                 )
+                if (uiState.password.isNotBlank() && !uiState.isPasswordValid) {
+                    Text(
+                        text = "La contraseña debe tener al menos 6 caracteres",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.sm)) {
+                ExpressivePasswordField(
+                    value = uiState.confirmPassword,
+                    onValueChange = { viewModel.onConfirmPasswordChanged(it) },
+                    label = { Text("Confirmar contraseña") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = uiState.confirmPassword.isNotBlank() && !uiState.isPasswordsMatch
+                )
+                if (uiState.confirmPassword.isNotBlank() && !uiState.isPasswordsMatch) {
+                    Text(
+                        text = "Las contraseñas no coinciden",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
 
             // Botón principal
-            Button(
+            ExpressiveButton(
                 onClick = { viewModel.onSignUpClick() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-                enabled = uiState.isFormValid && !uiState.isLoading
-            ) {
-                Text(
-                    text = "Crear Cuenta",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+                label = "Crear Cuenta",
+                modifier = Modifier.fillMaxWidth(),
+                enabled = uiState.isFormValid && !uiState.isLoading,
+                textStyle = MaterialTheme.typography.titleMedium
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
 
             // Separador
             Row(
@@ -191,32 +192,24 @@ fun SignUpScreen(
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.md))
 
             // Social SignUp
-            OutlinedButton(
+            ExpressiveOutlinedButton(
                 onClick = { viewModel.onGoogleSignUpClick() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.large,
-                enabled = !uiState.isLoading
-            ) {
-                Text("G")
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Google",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
+                label = "Google",
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading,
+                textStyle = MaterialTheme.typography.titleMedium
+            )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.md))
 
             // Link al login
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = Dimens.Spacing.sm),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -225,7 +218,7 @@ fun SignUpScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(Dimens.Spacing.xs))
                 TextButton(
                     onClick = onNavigateToLogin,
                     modifier = Modifier.height(32.dp),
@@ -240,7 +233,7 @@ fun SignUpScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
         }
     }
 

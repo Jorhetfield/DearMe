@@ -8,6 +8,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,8 +21,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +32,9 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -87,6 +93,7 @@ import es.jorhetfield.dearme.ui.theme.CapsuleLightText6
 import es.jorhetfield.dearme.ui.theme.CapsuleLightText7
 import es.jorhetfield.dearme.ui.theme.CapsuleLightText8
 import es.jorhetfield.dearme.ui.theme.CapsuleLightText9
+import es.jorhetfield.dearme.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -112,6 +119,20 @@ fun VaultScreen(
                         )
                     },
                     actions = {
+                        IconButton(
+                            onClick = { viewModel.onRefresh() },
+                            enabled = !uiState.isRefreshing
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Actualizar",
+                                tint = if (uiState.isRefreshing) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
                         IconButton(
                             onClick = onNavigateToProfile,
                             modifier = Modifier.padding(end = 8.dp)
@@ -146,27 +167,87 @@ fun VaultScreen(
                 }
             }
         ) { paddingValues ->
-            if (uiState.capsules.isEmpty()) {
-                EmptyVaultContent(Modifier.fillMaxSize().padding(paddingValues))
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize().padding(paddingValues)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // Filter Segmented Buttons - Material 3 Style
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = Dimens.Padding.generous,
+                            vertical = Dimens.Padding.comfortable
+                        ),
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    items(
-                        count = uiState.capsules.size,
-                        key = { index -> uiState.capsules[index].id }
-                    ) { index ->
-                        CapsuleCard(
-                            capsule = uiState.capsules[index],
-                            onClick = { onNavigateToCapsuleDetail(uiState.capsules[index].id) },
-                            colorIndex = index,
-                            sharedTransitionScope = this@with,
-                            animatedVisibilityScope = animatedVisibilityScope
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val filterOptions = listOf(
+                            CapsuleFilter.LOCKED to "Bloqueadas",
+                            CapsuleFilter.READY to "Listas",
+                            CapsuleFilter.OPENED to "Abiertas"
                         )
+                        filterOptions.forEachIndexed { index, (filter, label) ->
+                            SegmentedButton(
+                                shape = SegmentedButtonDefaults.itemShape(
+                                    index = index,
+                                    count = filterOptions.size
+                                ),
+                                onClick = { viewModel.onFilterChanged(filter) },
+                                selected = uiState.selectedFilter == filter,
+                                icon = {
+                                    if (uiState.selectedFilter == filter) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                },
+                                label = { Text(label) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                // Content based on filter
+                if (uiState.filteredCapsules.isEmpty()) {
+                    EmptyVaultContent(
+                        Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        message = when (uiState.selectedFilter) {
+                            CapsuleFilter.LOCKED -> "No hay cápsulas bloqueadas"
+                            CapsuleFilter.READY -> "No hay cápsulas listas para abrir"
+                            CapsuleFilter.OPENED -> "No hay cápsulas abiertas"
+                        }
+                    )
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(Dimens.Padding.comfortable),
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
+                    ) {
+                        items(
+                            count = uiState.filteredCapsules.size,
+                            key = { index -> uiState.filteredCapsules[index].id }
+                        ) { index ->
+                            CapsuleCard(
+                                capsule = uiState.filteredCapsules[index],
+                                onClick = { onNavigateToCapsuleDetail(uiState.filteredCapsules[index].id) },
+                                colorIndex = index,
+                                sharedTransitionScope = this@with,
+                                animatedVisibilityScope = animatedVisibilityScope
+                            )
+                        }
                     }
                 }
             }
@@ -185,7 +266,10 @@ fun VaultScreen(
 }
 
 @Composable
-private fun EmptyVaultContent(modifier: Modifier = Modifier) {
+private fun EmptyVaultContent(
+    modifier: Modifier = Modifier,
+    message: String = "Tu bóveda está vacía"
+) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -197,13 +281,13 @@ private fun EmptyVaultContent(modifier: Modifier = Modifier) {
             modifier = Modifier.size(120.dp),
             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
         Text(
-            text = "Tu bóveda está vacía",
+            text = message,
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Dimens.Spacing.sm))
         Text(
             text = "Crea tu primera cápsula del tiempo",
             style = MaterialTheme.typography.bodyMedium,
@@ -248,7 +332,7 @@ private fun CapsuleCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(Dimens.Padding.comfortable),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -323,3 +407,4 @@ private fun getCardColors(index: Int): Pair<Color, Color> {
         }
     }
 }
+
