@@ -3,6 +3,7 @@ package es.jorhetfield.dearme.ui.screens.vault
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import es.jorhetfield.dearme.domain.extension.sortByVaultPriority
 import es.jorhetfield.dearme.domain.repository.CapsuleRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -16,7 +17,7 @@ class VaultViewModel @Inject constructor(
 
     val uiState = repository.getAllCapsules()
         .map { capsules ->
-            VaultUiState(capsules = capsules)
+            VaultUiState(capsules = capsules.sortByVaultPriority())
         }
         .stateIn(
             scope = viewModelScope,

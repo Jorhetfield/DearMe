@@ -2,6 +2,7 @@ package es.jorhetfield.dearme.data.repository
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import es.jorhetfield.dearme.domain.extension.updateLockStatus
 import es.jorhetfield.dearme.domain.model.Capsule
 import es.jorhetfield.dearme.domain.model.MediaType
 import es.jorhetfield.dearme.domain.repository.AuthRepository
@@ -35,7 +36,24 @@ class CapsuleRepositoryImpl @Inject constructor(
                     return@addSnapshotListener
                 }
                 val capsules = snapshot?.documents?.mapNotNull { it.toCapsule() } ?: emptyList()
-                trySend(capsules)
+
+                // Actualizar estado de bloqueo y sincronizar si es necesario
+                capsules.forEach { capsule ->
+                    val updatedCapsule = capsule.updateLockStatus()
+                    // Si cambió el estado, actualizar en Firebase
+                    if (updatedCapsule.isLocked != capsule.isLocked) {
+                        firestore
+                            .collection("users")
+                            .document(userId)
+                            .collection("capsules")
+                            .document(capsule.id)
+                            .update("isLocked", updatedCapsule.isLocked)
+                    }
+                }
+
+                // Enviar las cápsulas actualizadas
+                val updatedCapsules = capsules.map { it.updateLockStatus() }
+                trySend(updatedCapsules)
             }
 
         awaitClose { listener.remove() }
@@ -43,14 +61,22 @@ class CapsuleRepositoryImpl @Inject constructor(
 
     override suspend fun getCapsuleById(id: String): Capsule? {
         val userId = authRepository.currentUser?.uid ?: return null
-        return firestore
+        val capsule = firestore
             .collection("users")
             .document(userId)
             .collection("capsules")
             .document(id)
             .get()
             .await()
-            .toCapsule()
+            .toCapsule() ?: return null
+
+        // Actualizar estado de bloqueo si es necesario
+        val updatedCapsule = capsule.updateLockStatus()
+        if (updatedCapsule.isLocked != capsule.isLocked) {
+            updateCapsule(updatedCapsule)
+        }
+
+        return updatedCapsule
     }
 
     override suspend fun insertCapsule(capsule: Capsule) {

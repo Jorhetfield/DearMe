@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import es.jorhetfield.dearme.domain.repository.AuthRepository
+import es.jorhetfield.dearme.domain.repository.CapsuleRepository
+import es.jorhetfield.dearme.util.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val capsuleRepository: CapsuleRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -21,6 +24,7 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadUserData()
+        loadCapsuleStats()
     }
 
     private fun loadUserData() {
@@ -35,8 +39,31 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    private fun loadCapsuleStats() {
+        viewModelScope.launch {
+            capsuleRepository.getAllCapsules().collect { capsules ->
+                val totalSent = capsules.size
+                val totalOpened = capsules.count { it.isOpened }
+
+                _uiState.update { state ->
+                    state.copy(
+                        capsulasSent = totalSent.toString(),
+                        capsulesOpened = totalOpened.toString()
+                    )
+                }
+            }
+        }
+    }
+
     fun onNotificationsToggled(enabled: Boolean) {
         _uiState.update { it.copy(notificationsEnabled = enabled) }
+
+        // Habilitar o desactivar notificaciones en Firebase
+        if (enabled) {
+            NotificationHelper.enableNotifications()
+        } else {
+            NotificationHelper.disableNotifications()
+        }
     }
 
     fun onLogoutClick(onLogoutSuccess: () -> Unit) {

@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,6 +17,7 @@ import es.jorhetfield.dearme.data.preferences.OnboardingPreferencesRepository
 import es.jorhetfield.dearme.domain.repository.AuthRepository
 import es.jorhetfield.dearme.ui.navigation.DearMeNavHost
 import es.jorhetfield.dearme.ui.theme.DearMeTheme
+import es.jorhetfield.dearme.util.NotificationHelper
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -25,6 +27,13 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var authRepository: AuthRepository
+
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                NotificationHelper.enableNotifications()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +57,13 @@ class MainActivity : ComponentActivity() {
                 android.graphics.Color.TRANSPARENT
             )
         )
+
+        // Solicitar permisos de notificaciones en Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!NotificationHelper.hasNotificationPermission(this)) {
+                requestNotificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         setContent {
             DearMeTheme {

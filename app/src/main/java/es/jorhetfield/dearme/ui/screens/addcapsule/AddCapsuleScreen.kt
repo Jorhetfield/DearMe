@@ -92,6 +92,7 @@ fun AddCapsuleScreen(
 
     BaseScaffold(
             snackbarHostState = snackbarHostState,
+            snackbarAtTop = true,
             topBar = {
                 CenterAlignedTopAppBar(
                 title = {

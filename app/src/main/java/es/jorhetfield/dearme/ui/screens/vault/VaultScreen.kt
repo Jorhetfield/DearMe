@@ -39,9 +39,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.jorhetfield.dearme.domain.extension.formatUnlockTime
 import es.jorhetfield.dearme.domain.model.Capsule
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ErrorDialog
@@ -85,9 +87,6 @@ import es.jorhetfield.dearme.ui.theme.CapsuleLightText6
 import es.jorhetfield.dearme.ui.theme.CapsuleLightText7
 import es.jorhetfield.dearme.ui.theme.CapsuleLightText8
 import es.jorhetfield.dearme.ui.theme.CapsuleLightText9
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -216,16 +215,15 @@ private fun EmptyVaultContent(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun CapsuleCard(
+    modifier: Modifier = Modifier,
     capsule: Capsule,
     onClick: () -> Unit,
     colorIndex: Int = 0,
-    modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
-    val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
-    val unlockDateFormatted = remember(capsule.unlockDate) {
-        dateFormat.format(Date(capsule.unlockDate))
+    val unlockTimeText: String = remember(capsule.unlockDate) {
+        capsule.unlockDate.formatUnlockTime()
     }
 
     val (backgroundColor, onBackgroundColor) = getCardColors(colorIndex)
@@ -251,9 +249,11 @@ private fun CapsuleCard(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.weight(1f))
+
             if (capsule.isLocked) {
                 Icon(
                     imageVector = Icons.Default.Lock,
@@ -277,11 +277,14 @@ private fun CapsuleCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.weight(1f))
+
             Text(
-                text = "Desbloqueo: $unlockDateFormatted",
+                text = unlockTimeText,
+                modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.labelMedium,
-                color = onBackgroundColor
+                color = onBackgroundColor,
+                textAlign = TextAlign.Center
             )
         }
     }
