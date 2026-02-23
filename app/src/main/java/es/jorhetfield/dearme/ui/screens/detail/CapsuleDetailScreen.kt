@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -19,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.ui.components.BaseScaffold
@@ -29,12 +27,14 @@ import es.jorhetfield.dearme.ui.components.ErrorDialog
 @Composable
 fun CapsuleDetailScreen(
     capsuleId: String,
+    colorIndex: Int = 0,
     onNavigateBack: () -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: CapsuleDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val (bgColor, textColor) = getCardColorsFromIndex(colorIndex)
 
     LaunchedEffect(capsuleId) {
         viewModel.loadCapsule(capsuleId)
@@ -42,21 +42,27 @@ fun CapsuleDetailScreen(
 
     with(sharedTransitionScope) {
         BaseScaffold(
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = bgColor,
             topBar = {
                 TopAppBar(
-                    title = { Text("Cápsula del Tiempo") },
+                    title = {
+                        Text(
+                            "Tu Cápsula del Tiempo",
+                            color = textColor
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Cerrar"
+                                contentDescription = "Cerrar",
+                                tint = textColor
                             )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent
+                        containerColor = bgColor,
+                        scrolledContainerColor = bgColor
                     )
                 )
             }
@@ -69,13 +75,21 @@ fun CapsuleDetailScreen(
             uiState.capsule?.let { cap ->
                 if (cap.isLocked) {
                     // Estado bloqueado
-                    LockedContent(capsule = cap)
+                    LockedContent(
+                        capsule = cap,
+                        accentColor = bgColor,
+                        accentTextColor = textColor
+                    )
                 } else {
                     // Estado desbloqueado
                     if (uiState.showUnlockAnimation && !uiState.isRevealed) {
                         UnlockAnimation()
                     } else {
-                        RevealedContent(capsule = cap)
+                        RevealedContent(
+                            capsule = cap,
+                            accentColor = bgColor,
+                            accentTextColor = textColor
+                        )
                     }
                 }
             } ?: LoadingContent()

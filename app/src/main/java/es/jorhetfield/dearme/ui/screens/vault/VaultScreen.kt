@@ -100,7 +100,7 @@ import es.jorhetfield.dearme.ui.theme.Dimens
 fun VaultScreen(
     onNavigateToAddCapsule: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onNavigateToCapsuleDetail: (String) -> Unit,
+    onNavigateToCapsuleDetail: (String, Int) -> Unit,
     viewModel: VaultViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
@@ -242,7 +242,7 @@ fun VaultScreen(
                         ) { index ->
                             CapsuleCard(
                                 capsule = uiState.filteredCapsules[index],
-                                onClick = { onNavigateToCapsuleDetail(uiState.filteredCapsules[index].id) },
+                                onClick = { onNavigateToCapsuleDetail(uiState.filteredCapsules[index].id, index) },
                                 colorIndex = index,
                                 sharedTransitionScope = this@with,
                                 animatedVisibilityScope = animatedVisibilityScope

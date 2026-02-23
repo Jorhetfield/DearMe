@@ -121,8 +121,8 @@ fun DearMeNavHost(
                 VaultScreen(
                     onNavigateToAddCapsule = { navController.navigate(Screen.AddCapsule.route) },
                     onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
-                    onNavigateToCapsuleDetail = { capsuleId ->
-                        navController.navigate(Screen.CapsuleDetail.createRoute(capsuleId))
+                    onNavigateToCapsuleDetail = { capsuleId, colorIndex ->
+                        navController.navigate(Screen.CapsuleDetail.createRoute(capsuleId, colorIndex))
                     },
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedVisibilityScope = this@composable
@@ -162,7 +162,8 @@ fun DearMeNavHost(
             composable(
                 route = Screen.CapsuleDetail.route,
                 arguments = listOf(
-                    navArgument("capsuleId") { type = NavType.StringType }
+                    navArgument("capsuleId") { type = NavType.StringType },
+                    navArgument("colorIndex") { type = NavType.IntType }
                 ),
                 enterTransition = { slideEnterFromRightOpaque() },
                 exitTransition = { slideExitToLeftOpaque() },
@@ -170,8 +171,10 @@ fun DearMeNavHost(
                 popExitTransition = { slideExitToRightOpaque() }
             ) { backStackEntry ->
                 val capsuleId = backStackEntry.arguments?.getString("capsuleId") ?: return@composable
+                val colorIndex = backStackEntry.arguments?.getInt("colorIndex") ?: 0
                 CapsuleDetailScreen(
                     capsuleId = capsuleId,
+                    colorIndex = colorIndex,
                     onNavigateBack = { navController.popBackStack() },
                     sharedTransitionScope = this@SharedTransitionLayout,
                     animatedVisibilityScope = this@composable
