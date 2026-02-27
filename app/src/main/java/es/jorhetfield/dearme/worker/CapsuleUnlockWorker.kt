@@ -1,9 +1,11 @@
 package es.jorhetfield.dearme.worker
 
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
@@ -27,7 +29,7 @@ class CapsuleUnlockWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         val capsuleId = inputData.getString(KEY_CAPSULE_ID) ?: return Result.failure()
-        val message   = inputData.getString(KEY_MESSAGE) ?: "Tu cápsula está lista para abrir"
+        inputData.getString(KEY_MESSAGE)  // We don't use it, but consume from inputData
 
         // Deep-link intent: MainActivity reads EXTRA_CAPSULE_ID and navigates
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -42,14 +44,30 @@ class CapsuleUnlockWorker @AssistedInject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Ensure notification channel exists with IMPORTANCE_HIGH for heads-up notifications
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Notificaciones DearMe",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notificaciones de apertura de cápsulas"
+                enableVibration(true)
+                enableLights(true)
+            }
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Tu cápsula del tiempo está lista")
-            .setContentText(message.take(100))  // truncate long messages
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setContentTitle("Tu mensaje del pasado está listo")
+            .setContentText("Abre la cápsula para descubrir tu mensaje")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("Tu cápsula del tiempo ha llegado al presente. Ábrela para leer tu mensaje del pasado."))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

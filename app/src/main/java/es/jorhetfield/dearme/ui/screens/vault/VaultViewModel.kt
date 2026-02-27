@@ -5,17 +5,21 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import es.jorhetfield.dearme.domain.extension.sortByVaultPriority
 import es.jorhetfield.dearme.domain.repository.CapsuleRepository
+import es.jorhetfield.dearme.notification.CapsuleNotificationScheduler
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class VaultViewModel @Inject constructor(
-    private val repository: CapsuleRepository
+    private val repository: CapsuleRepository,
+    private val notificationScheduler: CapsuleNotificationScheduler
 ) : ViewModel() {
 
     private val selectedFilterFlow = MutableStateFlow(CapsuleFilter.LOCKED)
@@ -46,12 +50,25 @@ class VaultViewModel @Inject constructor(
         viewModelScope.launch {
             refreshingFlow.update { true }
             try {
-                // Trigger a refresh from the repository
-                repository.getAllCapsules().collect { _ ->
-                    refreshingFlow.update { false }
-                }
-            } catch (e: Exception) {
+                // Fetch fresh data from repository and only stop refreshing when data arrives
+                repository.getAllCapsules().take(1).collect { }
+                // Small delay to ensure compose runtime processes state updates
+                delay(300)
+            } catch (_: Exception) {
+                // Silently ignore errors
+            } finally {
                 refreshingFlow.update { false }
+            }
+        }
+    }
+
+    fun deleteCapsule(capsuleId: String) {
+        viewModelScope.launch {
+            try {
+                repository.deleteCapsule(capsuleId)
+                notificationScheduler.cancel(capsuleId)
+            } catch (e: Exception) {
+                // Error handling could be added if needed
             }
         }
     }
