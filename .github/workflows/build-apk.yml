@@ -1,0 +1,81 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, develop, release/** ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --no-daemon
+
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: dearme-debug-apk
+        path: app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 30
+
+    # Only build release APK on release branches
+    - name: Build Release APK
+      if: startsWith(github.ref, 'refs/heads/release/')
+      run: ./gradlew assembleRelease --no-daemon
+
+    - name: Upload Release APK
+      if: startsWith(github.ref, 'refs/heads/release/')
+      uses: actions/upload-artifact@v4
+      with:
+        name: dearme-release-apk
+        path: app/build/outputs/apk/release/app-release.apk
+        retention-days: 90
+
+    - name: Run Tests
+      run: ./gradlew test --no-daemon
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build Release APK
+      run: ./gradlew assembleRelease --no-daemon
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: app/build/outputs/apk/release/app-release.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
