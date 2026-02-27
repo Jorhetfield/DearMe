@@ -7,6 +7,7 @@ import es.jorhetfield.dearme.domain.model.Capsule
 import es.jorhetfield.dearme.domain.model.MediaType
 import es.jorhetfield.dearme.domain.repository.AuthRepository
 import es.jorhetfield.dearme.domain.repository.CapsuleRepository
+import es.jorhetfield.dearme.notification.CapsuleNotificationScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AddCapsuleViewModel @Inject constructor(
     private val repository: CapsuleRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val notificationScheduler: CapsuleNotificationScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddCapsuleUiState())
@@ -99,6 +101,13 @@ class AddCapsuleViewModel @Inject constructor(
                 )
 
                 repository.insertCapsule(capsule)
+
+                // Schedule unlock notification
+                notificationScheduler.schedule(
+                    capsuleId = capsule.id,
+                    message = capsule.message,
+                    unlockDateMillis = capsule.unlockDate
+                )
 
                 _uiState.update { it.copy(
                     isSealing = false,

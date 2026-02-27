@@ -4,8 +4,11 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,11 +25,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -39,9 +44,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.jorhetfield.dearme.domain.extension.formatUnlockTime
 import es.jorhetfield.dearme.domain.model.Capsule
 import es.jorhetfield.dearme.ui.components.BaseScaffold
+import es.jorhetfield.dearme.ui.components.ConfirmationDialog
 import es.jorhetfield.dearme.ui.components.ErrorDialog
 import es.jorhetfield.dearme.ui.theme.CapsuleDark1
 import es.jorhetfield.dearme.ui.theme.CapsuleDark10
@@ -106,6 +115,8 @@ fun VaultScreen(
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var selectedCapsuleId by remember { mutableStateOf<String?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     with(sharedTransitionScope) {
         BaseScaffold(
@@ -119,20 +130,6 @@ fun VaultScreen(
                         )
                     },
                     actions = {
-                        IconButton(
-                            onClick = { viewModel.onRefresh() },
-                            enabled = !uiState.isRefreshing
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Actualizar",
-                                tint = if (uiState.isRefreshing) {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
-                            )
-                        }
                         IconButton(
                             onClick = onNavigateToProfile,
                             modifier = Modifier.padding(end = 8.dp)
@@ -167,11 +164,16 @@ fun VaultScreen(
                 }
             }
         ) { paddingValues ->
-            Column(
+            PullToRefreshBox(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = { viewModel.onRefresh() },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
                 // Filter Segmented Buttons - Material 3 Style
                 Row(
                     modifier = Modifier
@@ -243,6 +245,10 @@ fun VaultScreen(
                             CapsuleCard(
                                 capsule = uiState.filteredCapsules[index],
                                 onClick = { onNavigateToCapsuleDetail(uiState.filteredCapsules[index].id, index) },
+                                onDeleteRequest = {
+                                    selectedCapsuleId = uiState.filteredCapsules[index].id
+                                    showDeleteConfirm = true
+                                },
                                 colorIndex = index,
                                 sharedTransitionScope = this@with,
                                 animatedVisibilityScope = animatedVisibilityScope
@@ -251,8 +257,30 @@ fun VaultScreen(
                     }
                 }
             }
+            }
         }
     }
+
+    // Delete confirmation dialog
+    ConfirmationDialog(
+        visible = showDeleteConfirm,
+        title = "Eliminar cápsula",
+        message = "Esta cápsula se eliminará permanentemente. Esta acción no se puede deshacer.",
+        confirmButtonLabel = "Eliminar",
+        cancelButtonLabel = "Cancelar",
+        isDestructive = true,
+        onConfirm = {
+            selectedCapsuleId?.let { id ->
+                viewModel.deleteCapsule(id)
+            }
+            showDeleteConfirm = false
+            selectedCapsuleId = null
+        },
+        onDismiss = {
+            showDeleteConfirm = false
+            selectedCapsuleId = null
+        }
+    )
 
     // Error dialog
     if (uiState.error != null) {
@@ -296,12 +324,13 @@ private fun EmptyVaultContent(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun CapsuleCard(
     modifier: Modifier = Modifier,
     capsule: Capsule,
     onClick: () -> Unit,
+    onDeleteRequest: () -> Unit = {},
     colorIndex: Int = 0,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope
@@ -311,24 +340,29 @@ private fun CapsuleCard(
     }
 
     val (backgroundColor, onBackgroundColor) = getCardColors(colorIndex)
+    var showMenu by remember { mutableStateOf(false) }
 
     with(sharedTransitionScope) {
-        Card(
-            onClick = onClick,
-            modifier = modifier
-                .fillMaxWidth()
-                .aspectRatio(0.85f)
-                .sharedBounds(
-                    sharedContentState = rememberSharedContentState(key = "capsule_card_${capsule.id}"),
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
-                    boundsTransform = { _, _ -> tween(durationMillis = 400) }
+        Box(modifier = modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.85f)
+                    .sharedBounds(
+                        sharedContentState = rememberSharedContentState(key = "capsule_card_${capsule.id}"),
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+                        boundsTransform = { _, _ -> tween(durationMillis = 400) }
+                    )
+                    .combinedClickable(
+                        onClick = onClick,
+                        onLongClick = { showMenu = true }
+                    ),
+                colors = CardDefaults.cardColors(
+                    containerColor = backgroundColor
                 ),
-            colors = CardDefaults.cardColors(
-                containerColor = backgroundColor
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -371,7 +405,39 @@ private fun CapsuleCard(
                 textAlign = TextAlign.Center
             )
         }
-    }
+            }
+
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            modifier = Modifier.padding(Dimens.Padding.compact),
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.Padding.compact),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                "Eliminar",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    },
+                    onClick = {
+                        onDeleteRequest()
+                        showMenu = false
+                    }
+                )
+            }
+        }
     }
 }
 

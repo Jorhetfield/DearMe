@@ -10,18 +10,25 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import es.jorhetfield.dearme.data.preferences.OnboardingPreferencesRepository
 import es.jorhetfield.dearme.domain.repository.AuthRepository
 import es.jorhetfield.dearme.ui.navigation.DearMeNavHost
+import es.jorhetfield.dearme.ui.navigation.Screen
 import es.jorhetfield.dearme.ui.theme.DearMeTheme
 import es.jorhetfield.dearme.util.NotificationHelper
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        const val EXTRA_CAPSULE_ID = "extra_capsule_id"
+    }
+
     @Inject
     lateinit var onboardingPreferencesRepository: OnboardingPreferencesRepository
 
@@ -65,6 +72,9 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Extract notification deep link before setContent
+        val deepLinkCapsuleId: String? = intent.getStringExtra(EXTRA_CAPSULE_ID)
+
         setContent {
             DearMeTheme {
                 Surface(
@@ -72,6 +82,16 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+
+                    // Handle notification deep link: navigate to capsule detail
+                    LaunchedEffect(deepLinkCapsuleId) {
+                        if (deepLinkCapsuleId != null) {
+                            navController.navigate(
+                                Screen.CapsuleDetail.createRoute(deepLinkCapsuleId, colorIndex = 0)
+                            )
+                        }
+                    }
+
                     DearMeNavHost(
                         navController = navController,
                         onExitApp = { finish() },

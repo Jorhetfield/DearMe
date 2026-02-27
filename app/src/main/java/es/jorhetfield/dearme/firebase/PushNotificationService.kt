@@ -40,9 +40,11 @@ class PushNotificationService : FirebaseMessagingService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Notificaciones DearMe"
             val descriptionText = "Notificaciones de tus cápsulas"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel(channelId, name, importance).apply {
                 description = descriptionText
+                enableVibration(true)
+                enableLights(true)
             }
 
             val notificationManager: NotificationManager =
@@ -67,7 +69,8 @@ class PushNotificationService : FirebaseMessagingService() {
             .setContentText(message)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
 
         // Mostrar la notificación
         val notificationManager: NotificationManager =
