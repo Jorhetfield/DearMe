@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import es.jorhetfield.dearme.domain.repository.CapsuleRepository
+import es.jorhetfield.dearme.notification.CapsuleNotificationScheduler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CapsuleDetailViewModel @Inject constructor(
-    private val repository: CapsuleRepository
+    private val repository: CapsuleRepository,
+    private val notificationScheduler: CapsuleNotificationScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CapsuleDetailUiState())
@@ -66,6 +68,7 @@ class CapsuleDetailViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true) }
                 repository.deleteCapsule(capsuleId)
+                notificationScheduler.cancel(capsuleId)
                 _uiState.update { it.copy(
                     isLoading = false,
                     capsule = null
