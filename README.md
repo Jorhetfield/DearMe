@@ -51,6 +51,7 @@
    - Create a Firebase project at [firebase.google.com](https://firebase.google.com)
    - Add your Android app to the project
    - Download `google-services.json` and place it in the `app/` directory
+   - **For CI/CD:** See [SETUP_FIREBASE_SECRET.md](SETUP_FIREBASE_SECRET.md) to configure GitHub Actions with Firebase credentials (recommended for team collaboration)
 
 4. **Build the project**
    ```bash
