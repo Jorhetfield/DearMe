@@ -1,7 +1,14 @@
 package es.jorhetfield.dearme.data.repository
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import es.jorhetfield.dearme.domain.extension.updateLockStatus
 import es.jorhetfield.dearme.domain.model.Capsule
 import es.jorhetfield.dearme.domain.model.MediaType
@@ -11,10 +18,13 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.io.File
 import javax.inject.Inject
 
 class CapsuleRepositoryImpl @Inject constructor(
+    private val context: Context,
     private val firestore: FirebaseFirestore,
+    private val storage: FirebaseStorage,
     private val authRepository: AuthRepository
 ) : CapsuleRepository {
 
@@ -110,6 +120,66 @@ class CapsuleRepositoryImpl @Inject constructor(
             .document(id)
             .delete()
             .await()
+        try {
+            storage.reference.child("capsules/$userId/$id/photo.webp").delete().await()
+        } catch (_: Exception) { }
+    }
+
+    override suspend fun uploadCapsulePhoto(userId: String, capsuleId: String, uri: Uri): String {
+        // Compress and optimize the image
+        val compressedFile = compressImage(uri)
+
+        val ref = storage.reference.child("capsules/$userId/$capsuleId/photo.webp")
+        ref.putFile(Uri.fromFile(compressedFile)).await()
+
+        // Clean up temporary file
+        compressedFile.delete()
+
+        return ref.downloadUrl.await().toString()
+    }
+
+    private fun compressImage(uri: Uri): File {
+        val bitmap = loadBitmap(uri)
+        val scaledBitmap = scaleBitmap(bitmap)
+        return saveBitmapAsWebP(scaledBitmap)
+    }
+
+    private fun loadBitmap(uri: Uri): Bitmap {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val source = ImageDecoder.createSource(context.contentResolver, uri)
+            ImageDecoder.decodeBitmap(source)
+        } else {
+            context.contentResolver.openInputStream(uri).use { inputStream ->
+                BitmapFactory.decodeStream(inputStream)
+            } ?: throw Exception("Could not decode image")
+        }
+    }
+
+    private fun scaleBitmap(bitmap: Bitmap): Bitmap {
+        val maxSize = 2048
+        val width = bitmap.width
+        val height = bitmap.height
+
+        return if (width <= maxSize && height <= maxSize) {
+            bitmap
+        } else {
+            val scale = minOf(maxSize.toFloat() / width, maxSize.toFloat() / height)
+            val newWidth = (width * scale).toInt()
+            val newHeight = (height * scale).toInt()
+            Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+        }
+    }
+
+    private fun saveBitmapAsWebP(bitmap: Bitmap): File {
+        val cacheDir = File(context.cacheDir, "image_cache").apply { mkdirs() }
+        val file = File(cacheDir, "compressed_${System.currentTimeMillis()}.webp")
+
+        file.outputStream().use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.WEBP, 85, outputStream)
+        }
+
+        bitmap.recycle()
+        return file
     }
 }
 

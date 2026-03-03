@@ -8,12 +8,15 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,16 +27,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import es.jorhetfield.dearme.domain.model.Capsule
+import es.jorhetfield.dearme.domain.model.MediaType
 import es.jorhetfield.dearme.ui.components.ExpressiveCard
+import es.jorhetfield.dearme.ui.components.ExpressiveCardContainer
 import es.jorhetfield.dearme.ui.theme.CapsuleDark1
 import es.jorhetfield.dearme.ui.theme.CapsuleDark10
 import es.jorhetfield.dearme.ui.theme.CapsuleDark2
@@ -250,15 +263,16 @@ fun RevealedContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(Dimens.Padding.comfortable)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg)
     ) {
-        // Información de la Cápsula
+        // Header con información de la cápsula
         ExpressiveCard(
-            modifier = Modifier.fillMaxWidth(),
-            containerColor = accentTextColor,
-            contentColor = accentColor
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimens.Padding.comfortable),
+            containerColor = accentColor,
+            contentColor = accentTextColor
         ) {
             Column(
                 modifier = Modifier
@@ -267,89 +281,150 @@ fun RevealedContent(
                 verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.md)
             ) {
                 Text(
-                    text = "Tu Cápsula",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = accentColor.copy(alpha = 0.8f)
+                    text = "✨ Tu mensaje del pasado",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = accentTextColor,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                 )
 
-                // Creación
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.xs)
+                // Fechas en dos columnas
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.Spacing.md)
                 ) {
-                    Text(
-                        text = "Escrito el:",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = accentColor.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = creationDateFormatted,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = accentColor,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                    )
-                }
-
-                // Desbloqueado
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.xs)
-                ) {
-                    Text(
-                        text = "Desbloqueado:",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = accentColor.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = unlockDateFormatted,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = accentColor,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-                    )
-                }
-
-                // Tipo de contenido
-                if (capsule.mediaPath != null) {
+                    // Fecha de creación
                     Column(
+                        modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.xs)
                     ) {
                         Text(
-                            text = "Contenido:",
+                            text = "Escrito",
                             style = MaterialTheme.typography.labelSmall,
-                            color = accentColor.copy(alpha = 0.8f)
+                            color = accentTextColor.copy(alpha = 0.7f)
                         )
                         Text(
-                            text = "📎 ${capsule.mediaType}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = accentColor
+                            text = creationDateFormatted,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = accentTextColor,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                        )
+                    }
+
+                    // Divisor visual
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .height(40.dp)
+                            .background(accentTextColor.copy(alpha = 0.2f))
+                    )
+
+                    // Fecha de desbloqueo
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.xs)
+                    ) {
+                        Text(
+                            text = "Desbloqueado",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = accentTextColor.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = unlockDateFormatted,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = accentTextColor,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                         )
                     }
                 }
             }
         }
 
-        // Contenido del Mensaje
+        // Imagen si existe - ocupa toda la card
+        if (capsule.mediaPath != null && capsule.mediaType == MediaType.PHOTO) {
+            var isImageLoading by remember { mutableStateOf(true) }
+
+            ExpressiveCardContainer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Dimens.Padding.comfortable),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                padding = 0.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = capsule.mediaPath,
+                        contentDescription = "Foto de la cápsula",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp)
+                            .clip(MaterialTheme.shapes.medium),
+                        onState = { state ->
+                            isImageLoading = state is coil.compose.AsyncImagePainter.State.Loading
+                        }
+                    )
+
+                    // Loader while image is loading
+                    if (isImageLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(40.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    }
+                }
+            }
+        }
+
+        // Contenido del Mensaje - Card principal
         ExpressiveCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
-                .weight(1f),
+                .padding(
+                    horizontal = Dimens.Padding.comfortable,
+                    vertical = Dimens.Padding.comfortable
+                )
+                .weight(1f, fill = false),
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = Dimens.Padding.comfortable)
             ) {
+                // Título del mensaje
+                Text(
+                    text = "Tu mensaje",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = Dimens.Spacing.md)
+                )
+
+                // Contenido
                 capsule.message?.let { message ->
                     Text(
                         text = message,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        lineHeight = 28.sp
                     )
                 } ?: Text(
                     text = "Sin mensaje de texto",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                 )
             }
         }
+
+        // Espaciador final para scroll confortable
+        Spacer(modifier = Modifier.height(Dimens.Spacing.lg))
     }
 }
 

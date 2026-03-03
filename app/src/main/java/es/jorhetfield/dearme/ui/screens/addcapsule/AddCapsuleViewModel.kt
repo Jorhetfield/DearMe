@@ -1,5 +1,6 @@
 package es.jorhetfield.dearme.ui.screens.addcapsule
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -8,6 +9,7 @@ import es.jorhetfield.dearme.domain.model.MediaType
 import es.jorhetfield.dearme.domain.repository.AuthRepository
 import es.jorhetfield.dearme.domain.repository.CapsuleRepository
 import es.jorhetfield.dearme.notification.CapsuleNotificationScheduler
+import es.jorhetfield.dearme.ui.screens.addcapsule.FileType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,6 +64,14 @@ class AddCapsuleViewModel @Inject constructor(
         _uiState.update { it.copy(showBackDialog = show) }
     }
 
+    fun onShowPhotoSourcePicker(show: Boolean) {
+        _uiState.update { it.copy(showPhotoSourcePicker = show) }
+    }
+
+    fun setPendingCameraUri(uri: Uri?) {
+        _uiState.update { it.copy(pendingCameraUri = uri) }
+    }
+
     fun onSealCapsule() {
         val currentState = _uiState.value
 
@@ -88,12 +98,25 @@ class AddCapsuleViewModel @Inject constructor(
                     return@launch
                 }
 
+                val capsuleId = UUID.randomUUID().toString()
+
+                val photoFile = currentState.attachedFiles.firstOrNull {
+                    it.type == FileType.PHOTO && it.uri != null
+                }
+
+                val (mediaPath, mediaType) = if (photoFile != null) {
+                    val url = repository.uploadCapsulePhoto(userId, capsuleId, photoFile.uri!!)
+                    url to MediaType.PHOTO
+                } else {
+                    null to MediaType.TEXT_ONLY
+                }
+
                 val capsule = Capsule(
-                    id = UUID.randomUUID().toString(),
+                    id = capsuleId,
                     userId = userId,
                     message = currentState.message,
-                    mediaPath = null,
-                    mediaType = MediaType.TEXT_ONLY,
+                    mediaPath = mediaPath,
+                    mediaType = mediaType,
                     creationDate = System.currentTimeMillis(),
                     unlockDate = currentState.unlockDate,
                     isLocked = true,

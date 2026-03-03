@@ -1,5 +1,6 @@
 package es.jorhetfield.dearme.domain.repository
 
+import android.net.Uri
 import es.jorhetfield.dearme.domain.model.Capsule
 import kotlinx.coroutines.flow.Flow
 
@@ -9,4 +10,5 @@ interface CapsuleRepository {
     suspend fun insertCapsule(capsule: Capsule)
     suspend fun updateCapsule(capsule: Capsule)
     suspend fun deleteCapsule(id: String)
+    suspend fun uploadCapsulePhoto(userId: String, capsuleId: String, uri: Uri): String
 }

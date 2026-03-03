@@ -7,6 +7,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,10 +48,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -62,6 +67,7 @@ import es.jorhetfield.dearme.domain.model.Capsule
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.components.ConfirmationDialog
 import es.jorhetfield.dearme.ui.components.ErrorDialog
+import es.jorhetfield.dearme.ui.components.ExpressiveCard
 import es.jorhetfield.dearme.ui.theme.CapsuleDark1
 import es.jorhetfield.dearme.ui.theme.CapsuleDark10
 import es.jorhetfield.dearme.ui.theme.CapsuleDark2
@@ -117,6 +123,8 @@ fun VaultScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedCapsuleId by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
+    val coroutineScope = rememberCoroutineScope()
 
     with(sharedTransitionScope) {
         BaseScaffold(
@@ -174,89 +182,109 @@ fun VaultScreen(
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                // Filter Segmented Buttons - Material 3 Style
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = Dimens.Padding.generous,
-                            vertical = Dimens.Padding.comfortable
-                        ),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    SingleChoiceSegmentedButtonRow(
-                        modifier = Modifier.fillMaxWidth()
+                    // Filter Segmented Buttons - Material 3 Style
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = Dimens.Padding.generous,
+                                vertical = Dimens.Padding.comfortable
+                            ),
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        val filterOptions = listOf(
-                            CapsuleFilter.LOCKED to "Bloqueadas",
-                            CapsuleFilter.READY to "Listas",
-                            CapsuleFilter.OPENED to "Abiertas"
-                        )
-                        filterOptions.forEachIndexed { index, (filter, label) ->
-                            SegmentedButton(
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index = index,
-                                    count = filterOptions.size
-                                ),
-                                onClick = { viewModel.onFilterChanged(filter) },
-                                selected = uiState.selectedFilter == filter,
-                                icon = {
-                                    if (uiState.selectedFilter == filter) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                },
-                                label = { Text(label) },
-                                modifier = Modifier.weight(1f)
+                        SingleChoiceSegmentedButtonRow(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            val filterOptions = listOf(
+                                "Bloqueadas",
+                                "Listas",
+                                "Abiertas"
                             )
+                            filterOptions.forEachIndexed { index, label ->
+                                SegmentedButton(
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index = index,
+                                        count = filterOptions.size
+                                    ),
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(index)
+                                        }
+                                    },
+                                    selected = pagerState.currentPage == index,
+                                    icon = {
+                                        if (pagerState.currentPage == index) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    },
+                                    label = { Text(label) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
-                }
 
-                // Content based on filter
-                if (uiState.filteredCapsules.isEmpty()) {
-                    EmptyVaultContent(
-                        Modifier
-                            .fillMaxSize()
-                            .weight(1f),
-                        message = when (uiState.selectedFilter) {
-                            CapsuleFilter.LOCKED -> "No hay cápsulas bloqueadas"
-                            CapsuleFilter.READY -> "No hay cápsulas listas para abrir"
-                            CapsuleFilter.OPENED -> "No hay cápsulas abiertas"
-                        }
-                    )
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(Dimens.Padding.comfortable),
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg),
+                    // HorizontalPager with 3 pages
+                    HorizontalPager(
+                        state = pagerState,
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
-                    ) {
-                        items(
-                            count = uiState.filteredCapsules.size,
-                            key = { index -> uiState.filteredCapsules[index].id }
-                        ) { index ->
-                            CapsuleCard(
-                                capsule = uiState.filteredCapsules[index],
-                                onClick = { onNavigateToCapsuleDetail(uiState.filteredCapsules[index].id, index) },
-                                onDeleteRequest = {
-                                    selectedCapsuleId = uiState.filteredCapsules[index].id
-                                    showDeleteConfirm = true
-                                },
-                                colorIndex = index,
-                                sharedTransitionScope = this@with,
-                                animatedVisibilityScope = animatedVisibilityScope
+                    ) { pageIndex ->
+                        // Filter capsules based on current page
+                        val filteredCapsules = uiState.capsules.filter { capsule ->
+                            when (pageIndex) {
+                                0 -> capsule.isLocked
+                                1 -> !capsule.isLocked && capsule.unlockDate > System.currentTimeMillis()
+                                2 -> !capsule.isLocked && capsule.unlockDate <= System.currentTimeMillis()
+                                else -> false
+                            }
+                        }
+
+                        val emptyMessage = when (pageIndex) {
+                            0 -> "No hay cápsulas bloqueadas"
+                            1 -> "No hay cápsulas listas para abrir"
+                            2 -> "No hay cápsulas abiertas"
+                            else -> "Tu bóveda está vacía"
+                        }
+
+                        if (filteredCapsules.isEmpty()) {
+                            EmptyVaultContent(
+                                modifier = Modifier.fillMaxSize(),
+                                message = emptyMessage
                             )
+                        } else {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                contentPadding = PaddingValues(Dimens.Padding.comfortable),
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg),
+                                verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.lg),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(
+                                    count = filteredCapsules.size,
+                                    key = { index -> filteredCapsules[index].id }
+                                ) { index ->
+                                    CapsuleCard(
+                                        capsule = filteredCapsules[index],
+                                        onClick = { onNavigateToCapsuleDetail(filteredCapsules[index].id, index) },
+                                        onDeleteRequest = {
+                                            selectedCapsuleId = filteredCapsules[index].id
+                                            showDeleteConfirm = true
+                                        },
+                                        colorIndex = index,
+                                        sharedTransitionScope = this@with,
+                                        animatedVisibilityScope = animatedVisibilityScope
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
             }
         }
     }
@@ -344,7 +372,7 @@ private fun CapsuleCard(
 
     with(sharedTransitionScope) {
         Box(modifier = modifier.fillMaxWidth()) {
-            Card(
+            ExpressiveCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(0.85f)
@@ -358,10 +386,9 @@ private fun CapsuleCard(
                         onClick = onClick,
                         onLongClick = { showMenu = true }
                     ),
-                colors = CardDefaults.cardColors(
-                    containerColor = backgroundColor
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                containerColor = backgroundColor,
+                contentColor = onBackgroundColor,
+                onClick = null  // Ya manejamos clicks con combinedClickable
             ) {
         Column(
             modifier = Modifier

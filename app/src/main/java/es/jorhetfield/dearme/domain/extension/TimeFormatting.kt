@@ -59,17 +59,20 @@ fun Capsule.updateLockStatus(): Capsule {
  * Ordena las cápsulas según los siguientes criterios:
  * 1. Cápsulas desbloqueadas sin abrir (primero)
  * 2. Cápsulas bloqueadas (ordenadas por fecha de desbloqueo, las más próximas primero)
- * 3. Cápsulas desbloqueadas y abiertas (último)
+ * 3. Cápsulas desbloqueadas y abiertas (último, ordenadas de más a menos recientes)
  */
 fun List<Capsule>.sortByVaultPriority(): List<Capsule> {
-    return this.sortedWith(compareBy({ capsule ->
+    return this.sortedWith(compareBy<Capsule> { capsule ->
         when {
             !capsule.isLocked && !capsule.isOpened -> 0 // Desbloqueadas sin abrir (primero)
             capsule.isLocked -> 1 // Bloqueadas (segundo)
             else -> 2 // Desbloqueadas y abiertas (último)
         }
-    }, { capsule ->
-        // Para las bloqueadas, ordenar por fecha (más próximas primero)
-        if (capsule.isLocked) capsule.unlockDate else 0
-    }))
+    }.thenBy { capsule ->
+        // Para las bloqueadas, ordenar por fecha de desbloqueo (más próximas primero)
+        if (capsule.isLocked) capsule.unlockDate else Long.MAX_VALUE
+    }.thenByDescending { capsule ->
+        // Para las abiertas, ordenar por fecha de desbloqueo descendente (más recientes primero)
+        if (!capsule.isLocked && capsule.isOpened) capsule.unlockDate else 0L
+    })
 }
