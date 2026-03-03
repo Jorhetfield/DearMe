@@ -123,6 +123,9 @@ class CapsuleRepositoryImpl @Inject constructor(
         try {
             storage.reference.child("capsules/$userId/$id/photo.webp").delete().await()
         } catch (_: Exception) { }
+        try {
+            storage.reference.child("capsules/$userId/$id/audio.m4a").delete().await()
+        } catch (_: Exception) { }
     }
 
     override suspend fun uploadCapsulePhoto(userId: String, capsuleId: String, uri: Uri): String {
@@ -135,6 +138,12 @@ class CapsuleRepositoryImpl @Inject constructor(
         // Clean up temporary file
         compressedFile.delete()
 
+        return ref.downloadUrl.await().toString()
+    }
+
+    override suspend fun uploadCapsuleAudio(userId: String, capsuleId: String, file: File): String {
+        val ref = storage.reference.child("capsules/$userId/$capsuleId/audio.m4a")
+        ref.putFile(Uri.fromFile(file)).await()
         return ref.downloadUrl.await().toString()
     }
 

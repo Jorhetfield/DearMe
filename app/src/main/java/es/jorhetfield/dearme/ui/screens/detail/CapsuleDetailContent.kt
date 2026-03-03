@@ -1,5 +1,6 @@
 package es.jorhetfield.dearme.ui.screens.detail
 
+import android.media.MediaPlayer
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -21,11 +22,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,6 +99,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 fun LockedContent(
@@ -381,6 +388,18 @@ fun RevealedContent(
             }
         }
 
+        // Audio Player si existe
+        else if (capsule.mediaPath != null && capsule.mediaType == MediaType.AUDIO) {
+            AudioPlayerCard(
+                audioUrl = capsule.mediaPath,
+                accentColor = accentColor,
+                accentTextColor = accentTextColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Dimens.Padding.comfortable)
+            )
+        }
+
         // Contenido del Mensaje - Card principal
         ExpressiveCard(
             modifier = Modifier
@@ -473,4 +492,168 @@ fun getCardColorsFromIndex(colorIndex: Int): Pair<Color, Color> {
             else -> Pair(CapsuleLight10, CapsuleLightText10)
         }
     }
+}
+
+@Composable
+fun AudioPlayerCard(
+    audioUrl: String,
+    modifier: Modifier = Modifier,
+    accentColor: Color = MaterialTheme.colorScheme.primary,
+    accentTextColor: Color = MaterialTheme.colorScheme.onPrimary
+) {
+    var isPlaying by remember { mutableStateOf(false) }
+    var currentPosition by remember { mutableStateOf(0L) }
+    var duration by remember { mutableStateOf(0L) }
+    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+    var amplitudes by remember { mutableStateOf<List<Float>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    DisposableEffect(audioUrl) {
+        val player = MediaPlayer().apply {
+            try {
+                setDataSource(audioUrl)
+                setOnPreparedListener {
+                    duration = it.duration.toLong()
+                    isLoading = false
+                    // Generar amplitudes aproximadas basadas en la duración
+                    val bars = (it.duration / 100).coerceAtMost(100)
+                    amplitudes = List(bars) { (Math.random() * 0.7f + 0.3f).toFloat() }
+                }
+                prepareAsync()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                isLoading = false
+            }
+        }
+        mediaPlayer = player
+
+        onDispose {
+            if (isPlaying) {
+                player.stop()
+                isPlaying = false
+            }
+            player.release()
+            mediaPlayer = null
+        }
+    }
+
+    LaunchedEffect(isPlaying) {
+        if (mediaPlayer != null) {
+            if (isPlaying) {
+                mediaPlayer!!.start()
+            } else {
+                mediaPlayer!!.pause()
+            }
+        }
+    }
+
+    LaunchedEffect(isPlaying, mediaPlayer) {
+        if (isPlaying && mediaPlayer != null) {
+            while (isPlaying && mediaPlayer != null) {
+                currentPosition = mediaPlayer!!.currentPosition.toLong()
+                if (duration > 0 && currentPosition >= duration) {
+                    isPlaying = false
+                    currentPosition = 0L
+                    mediaPlayer?.seekTo(0)
+                }
+                kotlinx.coroutines.delay(200)
+            }
+        }
+    }
+
+    ExpressiveCard(
+        modifier = modifier,
+        containerColor = accentColor,
+        contentColor = accentTextColor
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimens.Padding.comfortable),
+            verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.md),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "🎙 Mensaje de voz",
+                style = MaterialTheme.typography.titleMedium,
+                color = accentTextColor
+            )
+
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(32.dp),
+                    color = accentTextColor,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                // Visualizador de audio
+                es.jorhetfield.dearme.ui.screens.addcapsule.AudioVisualizer(
+                    amplitudes = amplitudes,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(45.dp),
+                    barColor = accentTextColor
+                )
+
+                Spacer(modifier = Modifier.height(Dimens.Spacing.sm))
+
+                // Controles de reproducción
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.Spacing.md),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            isPlaying = !isPlaying
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                            tint = accentTextColor,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.Spacing.xs)
+                    ) {
+                        LinearProgressIndicator(
+                            { if (duration > 0) currentPosition.toFloat() / duration else 0f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp),
+                            color = accentTextColor,
+                            trackColor = accentTextColor.copy(alpha = 0.3f)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                formatDuration(currentPosition),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = accentTextColor.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                formatDuration(duration),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = accentTextColor.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatDuration(ms: Long): String {
+    val seconds = (ms / 1000) % 60
+    val minutes = (ms / 1000 / 60) % 60
+    return String.format(Locale.US, "%02d:%02d", minutes, seconds)
 }

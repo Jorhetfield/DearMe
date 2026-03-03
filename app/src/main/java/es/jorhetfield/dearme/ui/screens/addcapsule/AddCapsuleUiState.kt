@@ -16,7 +16,13 @@ data class AddCapsuleUiState(
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val showPhotoSourcePicker: Boolean = false,
-    val pendingCameraUri: Uri? = null
+    val pendingCameraUri: Uri? = null,
+    val showAudioRecorder: Boolean = false,
+    val isRecording: Boolean = false,
+    val recordingDurationMs: Long = 0L,
+    val isPlayingPreview: Boolean = false,
+    val audioPreviewUri: Uri? = null,
+    val audioAmplitudes: List<Float> = emptyList()
 ) {
     val hasChanges: Boolean = message.isNotBlank()
     val unlockDate: Long? = if (selectedDateMillis != null && selectedHour != null && selectedMinute != null) {

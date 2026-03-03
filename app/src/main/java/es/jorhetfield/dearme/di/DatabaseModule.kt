@@ -11,6 +11,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import es.jorhetfield.dearme.data.local.AppDatabase
 import es.jorhetfield.dearme.data.local.dao.CapsuleDao
+import es.jorhetfield.dearme.ui.screens.addcapsule.AudioRecorderManager
 import javax.inject.Singleton
 
 @Module
@@ -44,4 +45,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideAudioRecorderManager(context: Context): AudioRecorderManager = AudioRecorderManager(context)
 }

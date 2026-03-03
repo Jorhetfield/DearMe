@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "es.jorhetfield.dearme"
-        minSdk = 26 // Android 8.0 (Oreo) - Requisito definido en PRD
+        minSdk = 31
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -90,6 +90,9 @@ dependencies {
 
     // Security (Encrypted Preferences)
     implementation(libs.androidx.security.crypto)
+
+    // Accompanist (Permissions)
+    implementation(libs.accompanist.permissions)
 
     // Test
     testImplementation(libs.junit)

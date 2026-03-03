@@ -3,6 +3,7 @@ package es.jorhetfield.dearme.domain.repository
 import android.net.Uri
 import es.jorhetfield.dearme.domain.model.Capsule
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 interface CapsuleRepository {
     fun getAllCapsules(): Flow<List<Capsule>>
@@ -11,4 +12,5 @@ interface CapsuleRepository {
     suspend fun updateCapsule(capsule: Capsule)
     suspend fun deleteCapsule(id: String)
     suspend fun uploadCapsulePhoto(userId: String, capsuleId: String, uri: Uri): String
+    suspend fun uploadCapsuleAudio(userId: String, capsuleId: String, file: File): String
 }

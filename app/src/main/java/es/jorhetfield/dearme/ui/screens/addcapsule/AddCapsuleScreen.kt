@@ -9,15 +9,22 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -26,8 +33,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Info
@@ -90,12 +99,13 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import java.util.Locale
 import es.jorhetfield.dearme.ui.components.BaseScaffold
 import es.jorhetfield.dearme.ui.theme.Dimens
 import java.io.File
 import kotlin.random.Random
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun AddCapsuleScreen(
     onNavigateBack: () -> Unit,
@@ -105,6 +115,7 @@ fun AddCapsuleScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val audioPermissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
     // Gallery launcher — no permission needed on Android 13+ (backport via Jetpack)
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -304,7 +315,7 @@ fun AddCapsuleScreen(
                                 } else {
                                     Icon(
                                         imageVector = when (file.type) {
-                                            FileType.AUDIO -> Icons.Filled.Phone
+                                            FileType.AUDIO -> Icons.Filled.Mic
                                             FileType.PHOTO -> Icons.Filled.CameraAlt
                                         },
                                         contentDescription = null,
@@ -410,9 +421,15 @@ fun AddCapsuleScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             MultimediaActionButton(
-                                icon = Icons.Outlined.Phone,
+                                icon = Icons.Filled.Mic,
                                 label = "Voz",
-                                onClick = { /* TODO: Microphone */ },
+                                onClick = {
+                                    if (audioPermissionState.status is PermissionStatus.Granted) {
+                                        viewModel.onShowAudioRecorder(true)
+                                    } else {
+                                        audioPermissionState.launchPermissionRequest()
+                                    }
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                             MultimediaActionButton(
@@ -616,6 +633,30 @@ fun AddCapsuleScreen(
             textContentColor = MaterialTheme.colorScheme.onSurface
         )
     }
+
+    // Audio Recorder Sheet
+    if (uiState.showAudioRecorder) {
+        val sheetState = rememberModalBottomSheetState()
+        ModalBottomSheet(
+            onDismissRequest = {
+                viewModel.onShowAudioRecorder(false)
+            },
+            sheetState = sheetState
+        ) {
+            AudioRecorderSheet(
+                isRecording = uiState.isRecording,
+                recordingDurationMs = uiState.recordingDurationMs,
+                isPlayingPreview = uiState.isPlayingPreview,
+                hasAudio = uiState.audioPreviewUri != null,
+                audioAmplitudes = uiState.audioAmplitudes,
+                onStartRecording = { viewModel.onStartRecording() },
+                onStopRecording = { viewModel.onStopRecording() },
+                onSaveAudio = { viewModel.onSaveAudio() },
+                onDiscardAudio = { viewModel.onDeleteAudio() },
+                onClose = { viewModel.onShowAudioRecorder(false) }
+            )
+        }
+    }
 }
 
 private fun createCameraUri(context: Context): Uri {
@@ -754,4 +795,189 @@ fun ExpressiveSealButton(
         contentColor = MaterialTheme.colorScheme.onPrimary,
         interactionSource = interactionSource
     )
+}
+
+@Composable
+fun AudioRecorderSheet(
+    isRecording: Boolean,
+    recordingDurationMs: Long,
+    isPlayingPreview: Boolean,
+    hasAudio: Boolean,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
+    onSaveAudio: () -> Unit,
+    onDiscardAudio: () -> Unit,
+    onClose: () -> Unit,
+    audioAmplitudes: List<Float> = emptyList()
+) {
+    var isPlayingPreviewLocal by remember { mutableStateOf(false) }
+    var previewDuration by remember { mutableStateOf(0L) }
+    var previewPosition by remember { mutableStateOf(0L) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Header
+        Text(
+            "🎙 Mensaje de voz",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        // Visualizador
+        AudioVisualizer(
+            amplitudes = audioAmplitudes,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            barColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+        )
+
+        // Timer
+        val minutes = (recordingDurationMs / 60000).toInt()
+        val seconds = ((recordingDurationMs % 60000) / 1000).toInt()
+        val timerText = String.format(Locale.US, "%02d:%02d", minutes, seconds)
+
+        Text(
+            timerText,
+            style = MaterialTheme.typography.headlineSmall,
+            color = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+        )
+
+        // Record/Stop Button
+        val scale by animateFloatAsState(
+            targetValue = if (isRecording) 1.15f else 1f,
+            animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f)
+        )
+
+        FilledTonalButton(
+            onClick = {
+                if (isRecording) {
+                    onStopRecording()
+                } else {
+                    onStartRecording()
+                }
+            },
+            modifier = Modifier
+                .size(100.dp)
+                .scale(scale),
+            shape = CircleShape,
+            colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                containerColor = if (isRecording) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Icon(
+                imageVector = if (isRecording) Icons.Filled.Close else Icons.Filled.Mic,
+                contentDescription = if (isRecording) "Detener" else "Grabar",
+                modifier = Modifier.size(50.dp),
+                tint = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            )
+        }
+
+        if (isRecording) {
+            Text(
+                "● Grabando...",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        // Preview and Save/Discard buttons (visible after recording stops)
+        if (hasAudio && !isRecording) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Preview controls
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { isPlayingPreviewLocal = !isPlayingPreviewLocal },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isPlayingPreviewLocal) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (isPlayingPreviewLocal) "Pausar" else "Reproducir",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    AudioVisualizer(
+                        amplitudes = audioAmplitudes,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp),
+                        barColor = MaterialTheme.colorScheme.primary,
+                        barHeight = 20f
+                    )
+                    Text(
+                        "Preview",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FilledTonalButton(
+                    onClick = onSaveAudio,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = "Guardar",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Guardar", style = MaterialTheme.typography.labelMedium)
+                }
+
+                FilledTonalButton(
+                    onClick = onDiscardAudio,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Descartar",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Descartar", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+    }
 }
