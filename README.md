@@ -223,7 +223,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-**Javier García Carboneras** ([@Jorhetfield](https://github.com/Jorhetfield))
+**Jorge García Carboneras** ([@Jorhetfield](https://github.com/Jorhetfield))
 
 ---
 
